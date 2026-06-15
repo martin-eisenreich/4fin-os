@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Konzultace">
+<title>4fin | Modul 1 — Systémová konzultace</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  :root {
+    --bg:#0d0f14; --surface:#151820; --surface2:#1c2030;
+    --border:#252a3a; --accent:#c8a96e; --accent2:#e8c98e;
+    --green:#4caf82; --red:#e05252; --yellow:#e0a832;
+    --blue:#5b8dee; --text:#e8eaf0; --text2:#8892a4; --text3:#555f72;
+    --radius:10px; --mono:'JetBrains Mono',monospace; --sans:'Inter',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5;}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+  .logo{font-family:var(--mono);font-size:12px;color:var(--accent);letter-spacing:0.08em;}
+  .back-btn{font-size:13px;color:var(--text2);text-decoration:none;display:flex;align-items:center;gap:4px;}
+  .back-btn:hover{color:var(--text);}
+  #clock{font-family:var(--mono);font-size:11px;color:var(--text3);}
+  .shell{max-width:520px;margin:0 auto;padding:24px 16px 80px;}
+
+  /* STEPS */
+  .steps{display:flex;gap:6px;margin-bottom:28px;overflow-x:auto;padding-bottom:4px;}
+  .step-btn{
+    flex-shrink:0;padding:6px 14px;border-radius:99px;font-size:12px;font-weight:500;
+    border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;
+    transition:all 0.15s;
+  }
+  .step-btn.active{background:var(--accent);color:#0d0f14;border-color:var(--accent);}
+  .step-btn.done{border-color:var(--green);color:var(--green);}
+
+  /* PANELS */
+  .panel{display:none;}
+  .panel.active{display:block;}
+  .panel-title{font-size:18px;font-weight:700;margin-bottom:4px;}
+  .panel-sub{font-size:13px;color:var(--text2);margin-bottom:20px;}
+
+  /* CONSULTANT INFO */
+  .consultant-form{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:20px;}
+  .form-row{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+  .form-row:last-child{margin-bottom:0;}
+  .form-label{font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);}
+  .form-input{
+    background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+    padding:10px 14px;font-size:14px;color:var(--text);font-family:var(--sans);
+    outline:none;transition:border-color 0.15s;
+  }
+  .form-input:focus{border-color:var(--accent);}
+  .form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+  /* CHECKLIST */
+  .checklist{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;}
+  .check-item{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:14px 16px;display:flex;align-items:flex-start;gap:12px;cursor:pointer;
+    transition:border-color 0.15s;
+  }
+  .check-item.checked{border-color:var(--green);}
+  .check-item.checked .check-text{color:var(--text2);}
+  .checkbox{
+    width:20px;height:20px;border-radius:6px;border:2px solid var(--border);
+    flex-shrink:0;display:flex;align-items:center;justify-content:center;
+    transition:all 0.15s;margin-top:1px;
+  }
+  .check-item.checked .checkbox{background:var(--green);border-color:var(--green);}
+  .check-icon{display:none;color:#0d0f14;font-size:12px;font-weight:700;}
+  .check-item.checked .check-icon{display:block;}
+  .check-text{font-size:14px;line-height:1.4;}
+  .check-sub{font-size:12px;color:var(--text3);margin-top:2px;}
+
+  /* NOTES AREA */
+  .notes-area{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:14px;width:100%;min-height:100px;font-size:14px;color:var(--text);
+    font-family:var(--sans);resize:vertical;outline:none;line-height:1.5;
+    transition:border-color 0.15s;
+  }
+  .notes-area:focus{border-color:var(--accent);}
+  .notes-label{font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;display:block;}
+
+  /* PROGRESS BAR */
+  .progress-wrap{margin-bottom:20px;}
+  .progress-info{display:flex;justify-content:space-between;margin-bottom:6px;}
+  .progress-label{font-size:12px;color:var(--text2);}
+  .progress-pct{font-size:12px;font-family:var(--mono);color:var(--accent);}
+  .progress-bar{height:4px;background:var(--surface2);border-radius:99px;overflow:hidden;}
+  .progress-fill{height:100%;background:var(--accent);border-radius:99px;transition:width 0.3s;}
+
+  /* AI BOX */
+  .ai-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:20px;}
+  .ai-header{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+  .ai-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+  .ai-title{font-size:13px;font-weight:600;color:var(--accent);}
+  .ai-prompt{
+    background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+    padding:10px 14px;font-size:13px;color:var(--text2);margin-bottom:10px;
+  }
+  .ai-response{font-size:13px;color:var(--text);line-height:1.6;min-height:40px;}
+  .ai-btn{
+    background:rgba(200,169,110,0.1);border:1px solid rgba(200,169,110,0.3);
+    color:var(--accent);border-radius:8px;padding:8px 16px;font-size:13px;
+    font-weight:500;cursor:pointer;transition:all 0.15s;width:100%;margin-top:10px;
+    font-family:var(--sans);
+  }
+  .ai-btn:hover{background:rgba(200,169,110,0.2);}
+  .ai-loading{color:var(--text3);font-style:italic;}
+
+  /* NAV BUTTONS */
+  .nav-row{display:flex;gap:10px;margin-top:24px;}
+  .btn-primary{
+    flex:1;background:var(--accent);color:#0d0f14;border:none;border-radius:10px;
+    padding:13px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans);
+    transition:opacity 0.15s;
+  }
+  .btn-primary:hover{opacity:0.9;}
+  .btn-secondary{
+    background:var(--surface);border:1px solid var(--border);color:var(--text2);
+    border-radius:10px;padding:13px 18px;font-size:14px;cursor:pointer;font-family:var(--sans);
+    transition:border-color 0.15s;
+  }
+  .btn-secondary:hover{border-color:var(--text2);}
+
+  /* RATING */
+  .rating-row{display:flex;gap:8px;margin-bottom:16px;}
+  .rating-btn{
+    flex:1;border:1px solid var(--border);background:var(--surface);border-radius:8px;
+    padding:12px 6px;text-align:center;cursor:pointer;transition:all 0.15s;
+  }
+  .rating-btn .r-num{font-size:18px;font-weight:700;font-family:var(--mono);}
+  .rating-btn .r-label{font-size:10px;color:var(--text3);margin-top:2px;}
+  .rating-btn.sel-1{border-color:var(--red);background:rgba(224,82,82,0.1);}
+  .rating-btn.sel-2{border-color:var(--yellow);background:rgba(224,168,50,0.1);}
+  .rating-btn.sel-3{border-color:var(--green);background:rgba(76,175,130,0.1);}
+  .rating-btn.sel-4{border-color:var(--accent);background:rgba(200,169,110,0.1);}
+
+  /* SUMMARY CARD */
+  .summary-card{background:var(--surface);border:1px solid var(--green);border-radius:var(--radius);padding:20px;text-align:center;margin-bottom:20px;}
+  .summary-emoji{font-size:36px;margin-bottom:8px;}
+  .summary-title{font-size:16px;font-weight:600;margin-bottom:4px;}
+  .summary-sub{font-size:13px;color:var(--text2);}
+
+  .divider{height:1px;background:var(--border);margin:20px 0;}
+  .tag{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:500;background:rgba(200,169,110,0.12);color:var(--accent);margin-right:4px;margin-bottom:4px;}
+</style>
+</head>
+<body>
+<header>
+  <a class="back-btn" href="index.html">‹ 4fin OS</a>
+  <div class="logo">Modul 1</div>
+  <div id="clock"></div>
+</header>
+
+<div class="shell">
+
+  <!-- STEP TABS -->
+  <div class="steps">
+    <button class="step-btn active" onclick="goStep(0)">① Zahájení</button>
+    <button class="step-btn" onclick="goStep(1)">② Situace</button>
+    <button class="step-btn" onclick="goStep(2)">③ Cíle</button>
+    <button class="step-btn" onclick="goStep(3)">④ Motivace</button>
+    <button class="step-btn" onclick="goStep(4)">⑤ Akční plán</button>
+    <button class="step-btn" onclick="goStep(5)">⑥ Závěr</button>
+  </div>
+
+  <!-- PANEL 0: ZAHÁJENÍ -->
+  <div class="panel active" id="panel-0">
+    <div class="panel-title">Zahájení konzultace</div>
+    <div class="panel-sub">Základní informace o konzultantovi</div>
+
+    <div class="consultant-form">
+      <div class="form-row">
+        <div class="form-label">Jméno konzultanta</div>
+        <input class="form-input" id="name" placeholder="Jméno Příjmení" oninput="save()">
+      </div>
+      <div class="form-row-2">
+        <div class="form-row">
+          <div class="form-label">Datum v 4fin</div>
+          <input class="form-input" id="since" placeholder="MM/RRRR" oninput="save()">
+        </div>
+        <div class="form-row">
+          <div class="form-label">Dnešní datum</div>
+          <input class="form-input" id="today" readonly>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-label">Aktuální pozice / titul</div>
+        <input class="form-input" id="pozice" placeholder="např. Junior poradce" oninput="save()">
+      </div>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-info">
+        <span class="progress-label">Zahájení</span>
+        <span class="progress-pct">0 / 6</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>
+    </div>
+
+    <span class="notes-label">Úvodní poznámky / nálada konzultanta</span>
+    <textarea class="notes-area" id="notes-0" placeholder="Jak přišel? Co říkal hned na začátku? Jaká je nálada?" oninput="save()"></textarea>
+
+    <div class="nav-row">
+      <button class="btn-primary" onclick="goStep(1)">Pokračovat →</button>
+    </div>
+  </div>
+
+  <!-- PANEL 1: SITUACE -->
+  <div class="panel" id="panel-1">
+    <div class="panel-title">Aktuální situace</div>
+    <div class="panel-sub">Zhodnoťte situaci konzultanta v klíčových oblastech</div>
+
+    <div class="checklist" id="cl-1">
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="checkbox"><span class="check-icon">✓</span></div>
+        <div>
+          <div class="check-text">Produkce za poslední měsíc</div>
+          <div class="check-sub">Kolik smluv, jaké OB, trend</div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="checkbox"><span class="check-icon">✓</span></div>
+        <div>
+          <div class="check-text">Aktivita a plánování schůzek</div>
+          <div class="check-sub">Kolik schůzek týdně, odkud klienti</div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="checkbox"><span class="check-icon">✓</span></div>
+        <div>
+          <div class="check-text">Vztah s týmem a manažerem</div>
+          <div class="check-sub">Jak vnímá podporu, spolupráci</div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="checkbox"><span class="check-icon">✓</span></div>
+        <div>
+          <div class="check-text">Vzdělávání a rozvoj</div>
+          <div class="check-sub">Zkoušky, kurzy, workshopy</div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="checkbox"><span class="check-icon">✓</span></div>
+        <div>
+          <div class="check-text">Příjem a finanční stabilita</div>
+          <div class="check-sub">Je spokojen s odměnou? Tlak na výsledky?</div>
+        </div>
+      </div>
+    </div>
+
+    <span class="notes-label">Poznámky ze situace</span>
+    <textarea class="notes-area" id="notes-1" placeholder="Co vyplynulo? Jaké jsou klíčové body? Co mě překvapilo?" oninput="save()"></textarea>
+
+    <div class="nav-row">
+      <button class="btn-secondary" onclick="goStep(0)">← Zpět</button>
+      <button class="btn-primary" onclick="goStep(2)">Pokračovat →</button>
+    </div>
+  </div>
+
+  <!-- PANEL 2: CÍLE -->
+  <div class="panel" id="panel-2">
+    <div class="panel-title">Cíle konzultanta</div>
+    <div class="panel-sub">Krátkodobé, střednědobé a dlouhodobé cíle</div>
+
+    <div class="consultant-form">
+      <div class="form-row">
+        <div class="form-label">🎯 Cíl na tento měsíc</div>
+        <input class="form-input" id="goal-1m" placeholder="Konkrétní, měřitelný cíl" oninput="save()">
+      </div>
+      <div class="form-row">
+        <div class="form-label">📅 Cíl na 3 měsíce</div>
+        <input class="form-input" id="goal-3m" placeholder="Co chce dosáhnout do konce čtvrtletí?" oninput="save()">
+      </div>
+      <div class="form-row">
+        <div class="form-label">🚀 Cíl na 1 rok</div>
+        <input class="form-input" id="goal-1y" placeholder="Kariérní nebo finanční cíl" oninput="save()">
+      </div>
+    </div>
+
+    <div class="checklist" id="cl-2">
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="checkbox"><span class="check-icon">✓</span></div>
+        <div>
+          <div class="check-text">Cíle jsou SMART (konkrétní, měřitelné)</div>
+          <div class="check-sub">Ne "chci se zlepšit" ale "chci 5 smluv za měsíc"</div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="checkbox"><span class="check-icon">✓</span></div>
+        <div>
+          <div class="check-text">Cíle jsou osobně motivované</div>
+          <div class="check-sub">Proč mu na tom záleží? Co je za cílem?</div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="checkbox"><span class="check-icon">✓</span></div>
+        <div>
+          <div class="check-text">Kariérní postup prodiskutován</div>
+          <div class="check-sub">Chce být manažerem? Zůstat poradcem?</div>
+        </div>
+      </div>
+    </div>
+
+    <span class="notes-label">Poznámky k cílům</span>
+    <textarea class="notes-area" id="notes-2" placeholder="Co řekl o svých snech a cílech? Co ho překvapilo?" oninput="save()"></textarea>
+
+    <div class="nav-row">
+      <button class="btn-secondary" onclick="goStep(1)">← Zpět</button>
+      <button class="btn-primary" onclick="goStep(3)">Pokračovat →</button>
+    </div>
+  </div>
+
+  <!-- PANEL 3: MOTIVACE -->
+  <div class="panel" id="panel-3">
+    <div class="panel-title">Motivace & překážky</div>
+    <div class="panel-sub">Co ho žene? Co ho brzdí?</div>
+
+    <div class="form-row" style="margin-bottom:16px;">
+      <div class="form-label" style="margin-bottom:8px;">Hodnocení aktuální motivace (1–4)</div>
+      <div class="rating-row">
+        <div class="rating-btn" onclick="setRating(1)"><div class="r-num">1</div><div class="r-label">Nízká</div></div>
+        <div class="rating-btn" onclick="setRating(2)"><div class="r-num">2</div><div class="r-label">Střední</div></div>
+        <div class="rating-btn" onclick="setRating(3)"><div class="r-num">3</div><div class="r-label">Vysoká</div></div>
+        <div class="rating-btn" onclick="setRating(4)"><div class="r-num">4</div><div class="r-label">Výjimečná</div></div>
+      </div>
+    </div>
+
+    <div class="checklist" id="cl-3">
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="checkbox"><span class="check-icon">✓</span></div>
+        <div>
+          <div class="check-text">Identifikován hlavní motivační faktor</div>
+          <div class="check-sub">Peníze, uznání, růst, jistota, rodina…</div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="checkbox"><span class="check-icon">✓</span></div>
+        <div>
+          <div class="check-text">Diskutovány konkrétní překážky</div>
+          <div class="check-sub">Co ho brzdí? Strach z odmítnutí, čas, rodina…</div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="checkbox"><span class="check-icon">✓</span></div>
+        <div>
+          <div class="check-text">Probrány silné stránky</div>
+          <div class="check-sub">Co mu jde? Co oceňují klienti?</div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="checkbox"><span class="check-icon">✓</span></div>
+        <div>
+          <div class="check-text">Zmíněna oblast pro rozvoj</div>
+          <div class="check-sub">Produkty, komunikace, administrativa…</div>
+        </div>
+      </div>
+    </div>
+
+    <span class="notes-label">Co ho skutečně motivuje / co brzdí</span>
+    <textarea class="notes-area" id="notes-3" placeholder="Klíčové momenty z rozhovoru o motivaci..." oninput="save()"></textarea>
+
+    <div class="nav-row">
+      <button class="btn-secondary" onclick="goStep(2)">← Zpět</button>
+      <button class="btn-primary" onclick="goStep(4)">Pokračovat →</button>
+    </div>
+  </div>
+
+  <!-- PANEL 4: AKČNÍ PLÁN -->
+  <div class="panel" id="panel-4">
+    <div class="panel-title">Akční plán</div>
+    <div class="panel-sub">Konkrétní kroky do příští konzultace</div>
+
+    <div class="consultant-form">
+      <div class="form-row">
+        <div class="form-label">📌 Úkol č. 1</div>
+        <input class="form-input" id="task-1" placeholder="Konkrétní akce do příštího setkání" oninput="save()">
+      </div>
+      <div class="form-row">
+        <div class="form-label">📌 Úkol č. 2</div>
+        <input class="form-input" id="task-2" placeholder="Další konkrétní akce" oninput="save()">
+      </div>
+      <div class="form-row">
+        <div class="form-label">📌 Úkol č. 3</div>
+        <input class="form-input" id="task-3" placeholder="Případný třetí úkol" oninput="save()">
+      </div>
+      <div class="form-row">
+        <div class="form-label">📅 Termín příští konzultace</div>
+        <input class="form-input" id="next-date" placeholder="DD.MM.RRRR HH:MM" oninput="save()">
+      </div>
+    </div>
+
+    <!-- AI BOX -->
+    <div class="ai-box">
+      <div class="ai-header">
+        <div class="ai-dot"></div>
+        <div class="ai-title">AI asistent — návrh úkolů</div>
+      </div>
+      <div class="ai-prompt">Na základě poznámek z konzultace navrhnu konkrétní úkoly pro konzultanta.</div>
+      <button class="ai-btn" onclick="generateTasks()">🤖 Navrhnout úkoly na základě konzultace</button>
+      <div class="ai-response" id="ai-response"></div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-secondary" onclick="goStep(3)">← Zpět</button>
+      <button class="btn-primary" onclick="goStep(5)">Závěr →</button>
+    </div>
+  </div>
+
+  <!-- PANEL 5: ZÁVĚR -->
+  <div class="panel" id="panel-5">
+    <div class="panel-title">Závěr konzultace</div>
+    <div class="panel-sub">Zápis a celkové hodnocení</div>
+
+    <div class="summary-card">
+      <div class="summary-emoji">✅</div>
+      <div class="summary-title">Konzultace dokončena</div>
+      <div class="summary-sub" id="summary-name">—</div>
+    </div>
+
+    <span class="notes-label">Celkový dojem & závěrečné poznámky</span>
+    <textarea class="notes-area" id="notes-5" placeholder="Jak konzultace dopadla? Co klíčového jsme dohodli? Co jsem si uvědomil?" oninput="save()"></textarea>
+
+    <div class="divider"></div>
+
+    <div style="margin-bottom:16px;">
+      <div class="notes-label" style="margin-bottom:10px;">Tagy konzultace</div>
+      <div id="tags-area">
+        <span class="tag" onclick="toggleTag(this)">💪 Motivovaný</span>
+        <span class="tag" onclick="toggleTag(this)">⚠️ Riziko odchodu</span>
+        <span class="tag" onclick="toggleTag(this)">🎯 Jasné cíle</span>
+        <span class="tag" onclick="toggleTag(this)">📈 Roste</span>
+        <span class="tag" onclick="toggleTag(this)">🔧 Potřebuje podporu</span>
+        <span class="tag" onclick="toggleTag(this)">⏰ Časové problémy</span>
+        <span class="tag" onclick="toggleTag(this)">💰 Finanční tlak</span>
+        <span class="tag" onclick="toggleTag(this)">🌟 Top talent</span>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-secondary" onclick="goStep(4)">← Zpět</button>
+      <button class="btn-primary" onclick="exportNote()">💾 Uložit zápis</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let currentStep = 0;
+let rating = 0;
+
+function pad(n){return String(n).padStart(2,'0');}
+function updateClock(){
+  const now = new Date();
+  const el = document.getElementById('clock');
+  if(el) el.textContent = pad(now.getHours())+':'+pad(now.getMinutes());
+}
+updateClock(); setInterval(updateClock,30000);
+
+// Set today's date
+const now = new Date();
+const todayStr = pad(now.getDate())+'.'+pad(now.getMonth()+1)+'.'+now.getFullYear();
+document.getElementById('today').value = todayStr;
+
+function goStep(n){
+  document.querySelectorAll('.panel').forEach((p,i)=>{
+    p.classList.toggle('active', i===n);
+  });
+  document.querySelectorAll('.step-btn').forEach((b,i)=>{
+    b.classList.remove('active','done');
+    if(i===n) b.classList.add('active');
+    else if(i<n) b.classList.add('done');
+  });
+  currentStep = n;
+  if(n===5){
+    const name = document.getElementById('name').value || '(bez jména)';
+    document.getElementById('summary-name').textContent = name + ' · ' + todayStr;
+  }
+  window.scrollTo(0,0);
+}
+
+function toggleCheck(el){
+  el.classList.toggle('checked');
+  save();
+}
+
+function setRating(n){
+  rating = n;
+  document.querySelectorAll('.rating-btn').forEach((b,i)=>{
+    b.className = 'rating-btn';
+    if(i+1===n) b.classList.add('sel-'+n);
+  });
+  save();
+}
+
+function toggleTag(el){
+  el.style.background = el.style.background ? '' : 'rgba(200,169,110,0.3)';
+}
+
+function save(){
+  // Could persist to localStorage if needed
+}
+
+async function generateTasks(){
+  const notes = [
+    document.getElementById('notes-0')?.value,
+    document.getElementById('notes-1')?.value,
+    document.getElementById('notes-2')?.value,
+    document.getElementById('notes-3')?.value,
+  ].filter(Boolean).join('\n');
+  const name = document.getElementById('name')?.value || 'konzultant';
+  const goals = [
+    document.getElementById('goal-1m')?.value,
+    document.getElementById('goal-3m')?.value,
+    document.getElementById('goal-1y')?.value,
+  ].filter(Boolean).join(', ');
+
+  const responseEl = document.getElementById('ai-response');
+  responseEl.innerHTML = '<span class="ai-loading">Generuji návrh úkolů...</span>';
+
+  const prompt = `Jsi zkušený manažer finančního poradenství. Na základě poznámek z individuální konzultace navrhni 3 konkrétní úkoly pro konzultanta.
+
+Konzultant: ${name}
+Cíle: ${goals || 'neuvedeny'}
+Poznámky z konzultace: ${notes || 'žádné poznámky'}
+
+Navrhni 3 konkrétní, měřitelné úkoly do příšté konzultace. Formát:
+1. [úkol]
+2. [úkol]  
+3. [úkol]
+
+Buď stručný a praktický. Odpověz česky.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:500,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.map(c=>c.text||'').join('') || 'Nepodařilo se vygenerovat návrh.';
+    responseEl.innerHTML = text.replace(/\n/g,'<br>');
+  } catch(e) {
+    responseEl.innerHTML = '<span style="color:var(--red)">Chyba připojení. Zkuste znovu.</span>';
+  }
+}
+
+function exportNote(){
+  const name = document.getElementById('name')?.value || 'konzultant';
+  const lines = [
+    `ZÁPIS Z KONZULTACE — ${name} — ${todayStr}`,
+    `${'='.repeat(50)}`,
+    `Pozice: ${document.getElementById('pozice')?.value || '—'}`,
+    `V 4fin od: ${document.getElementById('since')?.value || '—'}`,
+    ``,
+    `SITUACE:`,
+    document.getElementById('notes-1')?.value || '—',
+    ``,
+    `CÍLE:`,
+    `Měsíc: ${document.getElementById('goal-1m')?.value || '—'}`,
+    `3 měsíce: ${document.getElementById('goal-3m')?.value || '—'}`,
+    `1 rok: ${document.getElementById('goal-1y')?.value || '—'}`,
+    document.getElementById('notes-2')?.value || '',
+    ``,
+    `MOTIVACE (${rating}/4):`,
+    document.getElementById('notes-3')?.value || '—',
+    ``,
+    `AKČNÍ PLÁN:`,
+    `1. ${document.getElementById('task-1')?.value || '—'}`,
+    `2. ${document.getElementById('task-2')?.value || '—'}`,
+    `3. ${document.getElementById('task-3')?.value || '—'}`,
+    `Příští konzultace: ${document.getElementById('next-date')?.value || '—'}`,
+    ``,
+    `ZÁVĚR:`,
+    document.getElementById('notes-5')?.value || '—',
+  ].join('\n');
+
+  const blob = new Blob([lines], {type:'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `konzultace_${name.replace(/\s+/g,'_')}_${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
