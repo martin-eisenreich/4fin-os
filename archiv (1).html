@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>4fin | Archiv zápisů</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  :root{--bg:#0d0f14;--surface:#151820;--surface2:#1c2030;--border:#252a3a;--accent:#c8a96e;--green:#4caf82;--red:#e05252;--yellow:#e0a832;--blue:#5b8dee;--text:#e8eaf0;--text2:#8892a4;--text3:#555f72;--radius:10px;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+  .logo{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--accent);letter-spacing:0.08em;}
+  .logo span{color:var(--text3);}
+  .back-btn{font-size:13px;color:var(--text2);text-decoration:none;}
+  #clock{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text3);}
+  .shell{max-width:800px;margin:0 auto;padding:28px 20px 80px;}
+
+  .sync-bar{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text3);margin-bottom:20px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;}
+  .sync-dot{width:7px;height:7px;border-radius:50%;}
+  .sync-dot.synced{background:var(--green);}
+  .sync-dot.syncing{background:var(--yellow);animation:blink 0.8s infinite;}
+  .sync-dot.error{background:var(--red);}
+  @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+  .page-title{font-size:22px;font-weight:700;margin-bottom:4px;}
+  .page-sub{font-size:13px;color:var(--text2);margin-bottom:24px;}
+
+  /* FILTRY */
+  .filters{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+  .filter-btn{padding:6px 14px;border-radius:99px;font-size:12px;font-weight:500;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;transition:all 0.15s;}
+  .filter-btn.active{background:var(--accent);color:#0d0f14;border-color:var(--accent);}
+  .filter-input{background:var(--surface);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;padding:7px 12px;outline:none;flex:1;min-width:180px;}
+  .filter-input:focus{border-color:var(--accent);}
+
+  /* STATS */
+  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px;}
+  .stat-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;}
+  .stat-val{font-size:24px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--accent);}
+  .stat-label{font-size:11px;color:var(--text3);margin-top:3px;}
+
+  /* ZÁPISY */
+  .zapis-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);margin-bottom:10px;overflow:hidden;transition:border-color 0.15s;}
+  .zapis-card:hover{border-color:rgba(200,169,110,0.3);}
+  .zapis-header{padding:14px 18px;cursor:pointer;display:flex;align-items:center;gap:14px;}
+  .zapis-icon{font-size:20px;flex-shrink:0;}
+  .zapis-info{flex:1;}
+  .zapis-name{font-size:14px;font-weight:700;color:var(--text);}
+  .zapis-meta{font-size:11px;color:var(--text3);margin-top:2px;font-family:'JetBrains Mono',monospace;}
+  .zapis-badges{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:4px;}
+  .zapis-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;}
+  .badge-sys{background:rgba(91,141,238,0.15);color:var(--blue);}
+  .badge-rozv{background:rgba(76,175,130,0.15);color:var(--green);}
+  .badge-sent{background:rgba(76,175,130,0.1);color:var(--green);border:1px solid rgba(76,175,130,0.3);}
+  .badge-fail{background:rgba(224,82,82,0.1);color:var(--red);border:1px solid rgba(224,82,82,0.3);}
+  .zapis-chevron{color:var(--text3);font-size:16px;transition:transform 0.2s;}
+  .zapis-chevron.open{transform:rotate(180deg);}
+
+  .zapis-body{display:none;border-top:1px solid var(--border);padding:16px 18px;}
+  .zapis-body.open{display:block;}
+  .zapis-notes{background:var(--surface2);border-radius:8px;padding:12px 14px;font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:12px;}
+  .zapis-id{font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text3);margin-top:8px;}
+
+  .empty{text-align:center;padding:48px 20px;color:var(--text3);}
+  .empty-icon{font-size:40px;margin-bottom:12px;}
+
+  .section-title{font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);margin:0 0 14px;display:flex;align-items:center;gap:10px;}
+  .section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+
+  @media(max-width:500px){.stats-row{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<header>
+  <a class="back-btn" href="index.html">‹ 4fin OS</a>
+  <div class="logo">4fin <span>//</span> Archiv zápisů</div>
+  <div id="clock"></div>
+</header>
+
+<div class="shell">
+  <div class="sync-bar">
+    <div class="sync-dot syncing" id="sync-dot"></div>
+    <span id="sync-status">Načítám zápisy...</span>
+  </div>
+
+  <div class="page-title">Archiv zápisů</div>
+  <div class="page-sub">Historie všech konzultací</div>
+
+  <!-- STATISTIKY -->
+  <div class="stats-row">
+    <div class="stat-box"><div class="stat-val" id="stat-total">—</div><div class="stat-label">Celkem zápisů</div></div>
+    <div class="stat-box"><div class="stat-val" id="stat-sys">—</div><div class="stat-label">Systémových</div></div>
+    <div class="stat-box"><div class="stat-val" id="stat-rozv">—</div><div class="stat-label">Rozvojových</div></div>
+    <div class="stat-box"><div class="stat-val" id="stat-month">—</div><div class="stat-label">Tento měsíc</div></div>
+  </div>
+
+  <!-- FILTRY -->
+  <div class="filters">
+    <input class="filter-input" id="searchInput" placeholder="🔍 Hledat podle jména..." oninput="filterZapisy()">
+    <button class="filter-btn active" onclick="setFilter('all',this)">Vše</button>
+    <button class="filter-btn" onclick="setFilter('sys',this)">📊 Systémová</button>
+    <button class="filter-btn" onclick="setFilter('rozv',this)">🌱 Rozvojová</button>
+  </div>
+
+  <!-- SEZNAM ZÁPISŮ -->
+  <div class="section-title">Zápisy</div>
+  <div id="zapisyList"></div>
+</div>
+
+<script>
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbyqnJsAlmzOAntypivM5oiLt8twpNJkJrUaK4D-rkvQPzFC_btwUrC8ivasYrnWbdsM6g/exec';
+
+let allZapisy=[];
+let currentFilter='all';
+
+function pad(n){return String(n).padStart(2,'0');}
+function updateClock(){const now=new Date();document.getElementById('clock').textContent=pad(now.getHours())+':'+pad(now.getMinutes());}
+updateClock();setInterval(updateClock,30000);
+
+function setSyncStatus(state,text){
+  document.getElementById('sync-dot').className='sync-dot '+state;
+  document.getElementById('sync-status').textContent=text;
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  loadLocalZapisy();
+  loadFromSheets();
+});
+
+function loadLocalZapisy(){
+  // Načti zápisy z localStorage (uložené při konzultaci)
+  const keys=Object.keys(localStorage).filter(k=>k.startsWith('4fin_zapis_'));
+  const local=keys.map(k=>{try{return JSON.parse(localStorage.getItem(k));}catch(e){return null;}}).filter(Boolean);
+  allZapisy=local;
+  renderZapisy();
+  updateStats();
+}
+
+async function loadFromSheets(){
+  setSyncStatus('syncing','Načítám ze Sheets...');
+  try{
+    const resp=await fetch(SCRIPT_URL+'?action=get_zapisy');
+    const rows=await resp.json();
+    if(rows&&rows.length>1){
+      const sheetsZapisy=rows.slice(1).map(r=>({
+        id:r[0],date:r[1],name:r[2],personId:r[3],type:r[4],
+        notes:r[5],nextDate:r[6],emailStatus:r[7],source:'sheets'
+      })).filter(z=>z.id);
+      // Merge s lokálními
+      const localIds=new Set(allZapisy.map(z=>z.id));
+      sheetsZapisy.forEach(z=>{if(!localIds.has(z.id))allZapisy.push(z);});
+      // Seřaď dle data
+      allZapisy.sort((a,b)=>new Date(b.date)-new Date(a.date));
+      setSyncStatus('synced','Synchronizováno · '+allZapisy.length+' zápisů');
+    } else {
+      setSyncStatus('synced','Načteno lokálně');
+    }
+  }catch(e){
+    setSyncStatus('error','Offline — data z lokální zálohy');
+  }
+  renderZapisy();
+  updateStats();
+}
+
+function updateStats(){
+  const now=new Date();
+  const thisMonth=allZapisy.filter(z=>{
+    const d=new Date(z.date);
+    return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
+  });
+  document.getElementById('stat-total').textContent=allZapisy.length;
+  document.getElementById('stat-sys').textContent=allZapisy.filter(z=>z.type==='Systémová'||z.type==='sys').length;
+  document.getElementById('stat-rozv').textContent=allZapisy.filter(z=>z.type==='Rozvojová'||z.type==='rozv').length;
+  document.getElementById('stat-month').textContent=thisMonth.length;
+}
+
+function setFilter(f,el){
+  currentFilter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderZapisy();
+}
+
+function filterZapisy(){renderZapisy();}
+
+function renderZapisy(){
+  const search=document.getElementById('searchInput').value.toLowerCase();
+  let filtered=allZapisy;
+  if(currentFilter==='sys') filtered=filtered.filter(z=>z.type==='Systémová'||z.type==='sys');
+  if(currentFilter==='rozv') filtered=filtered.filter(z=>z.type==='Rozvojová'||z.type==='rozv');
+  if(search) filtered=filtered.filter(z=>(z.name||'').toLowerCase().includes(search)||(z.personId||'').includes(search));
+
+  const list=document.getElementById('zapisyList');
+  if(!filtered.length){
+    list.innerHTML='<div class="empty"><div class="empty-icon">📋</div><div>Žádné zápisy nenalezeny.</div></div>';
+    return;
+  }
+
+  list.innerHTML=filtered.map((z,i)=>{
+    const isRozv=z.type==='Rozvojová'||z.type==='rozv';
+    const emailOk=z.emailStatus&&z.emailStatus.includes('✅');
+    return `<div class="zapis-card">
+      <div class="zapis-header" onclick="toggleZapis('zb-${i}','chev-${i}')">
+        <div class="zapis-icon">${isRozv?'🌱':'📊'}</div>
+        <div class="zapis-info">
+          <div class="zapis-name">${esc(z.name||z.personId||'—')}</div>
+          <div class="zapis-meta">${z.date||'—'} ${z.nextDate&&z.nextDate!=='—'?'· Příští: '+z.nextDate:''}</div>
+          <div class="zapis-badges">
+            <span class="zapis-badge ${isRozv?'badge-rozv':'badge-sys'}">${isRozv?'🌱 Rozvojová':'📊 Systémová'}</span>
+            <span class="zapis-badge ${emailOk?'badge-sent':'badge-fail'}">${emailOk?'✅ Email odeslán':'📭 Email neodeslaný'}</span>
+          </div>
+        </div>
+        <div class="zapis-chevron" id="chev-${i}">▾</div>
+      </div>
+      <div class="zapis-body" id="zb-${i}">
+        ${z.notes&&z.notes!=='—'?`<div class="zapis-notes">${esc(z.notes)}</div>`:'<div style="font-size:13px;color:var(--text3);margin-bottom:10px;">Žádné poznámky.</div>'}
+        ${z.emailStatus?`<div style="font-size:12px;color:var(--text3);margin-bottom:6px;">📧 ${esc(z.emailStatus)}</div>`:''}
+        <div class="zapis-id">ID: ${z.id||'—'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleZapis(bodyId,chevId){
+  document.getElementById(bodyId)?.classList.toggle('open');
+  document.getElementById(chevId)?.classList.toggle('open');
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
+</script>
+</body>
+</html>
