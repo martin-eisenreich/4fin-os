@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>4fin | Rozvojová konzultace</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  :root {
+    --bg:#0d0f14; --surface:#151820; --surface2:#1c2030; --border:#252a3a;
+    --accent:#c8a96e; --accent2:#e8c98e; --green:#4caf82; --red:#e05252;
+    --yellow:#e0a832; --blue:#5b8dee; --purple:#9b5dee;
+    --text:#e8eaf0; --text2:#8892a4; --text3:#555f72;
+    --radius:10px; --mono:'JetBrains Mono',monospace; --sans:'Inter',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5;}
+
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+  .logo{font-family:var(--mono);font-size:13px;color:var(--accent);letter-spacing:0.08em;font-weight:500;}
+  .logo span{color:var(--text3);}
+  .back-btn{font-size:13px;color:var(--text2);text-decoration:none;}
+  #clock{font-family:var(--mono);font-size:12px;color:var(--text3);}
+  .shell{max-width:680px;margin:0 auto;padding:28px 20px 80px;}
+
+  .sync-bar{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text3);margin-bottom:20px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;}
+  .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--text3);flex-shrink:0;}
+  .sync-dot.synced{background:var(--green);}
+  .sync-dot.syncing{background:var(--yellow);animation:blink 0.8s infinite;}
+  .sync-dot.error{background:var(--red);}
+  @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+  /* PERSON SELECT */
+  .screen-title{font-size:20px;font-weight:700;margin-bottom:4px;}
+  .screen-sub{font-size:13px;color:var(--text2);margin-bottom:24px;}
+  .person-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;}
+  .person-btn{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px 14px;cursor:pointer;transition:all 0.15s;text-align:left;width:100%;}
+  .person-btn:hover{border-color:var(--accent);}
+  .person-btn.active{border-color:var(--accent);background:rgba(200,169,110,0.08);}
+  .person-name{font-size:15px;font-weight:700;color:var(--text);margin-bottom:3px;}
+  .person-role{font-size:11px;color:var(--text3);}
+  .person-count{font-size:11px;color:var(--accent);margin-top:6px;font-weight:600;}
+  .badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;font-family:var(--mono);margin-top:6px;}
+  .badge-manager{background:rgba(91,141,238,0.15);color:var(--blue);}
+  .badge-director{background:rgba(200,169,110,0.15);color:var(--accent);}
+  .badge-consultant{background:rgba(76,175,130,0.15);color:var(--green);}
+
+  /* SECTION */
+  .section-title{font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);margin:24px 0 14px;display:flex;align-items:center;gap:10px;}
+  .section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+
+  /* NOTES */
+  .note-blok{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px;}
+  .note-blok-title{font-size:12px;font-weight:600;color:var(--text2);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:12px;}
+  .note-item{background:var(--surface2);border-left:3px solid var(--accent);border-radius:0 7px 7px 0;padding:10px 14px;margin-bottom:8px;}
+  .note-item-text{font-size:13px;color:var(--text);line-height:1.5;}
+  .note-item-date{font-size:11px;color:var(--text3);margin-top:4px;}
+
+  /* TÉMA KARTA */
+  .tema-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);margin-bottom:16px;overflow:hidden;transition:border-color 0.2s;}
+  .tema-card.status-active{border-color:rgba(200,169,110,0.4);}
+  .tema-card.status-completed{border-color:rgba(76,175,130,0.4);}
+  .tema-card.status-new{border-color:rgba(91,141,238,0.3);}
+
+  .tema-top{padding:18px 20px;cursor:pointer;user-select:none;}
+  .tema-header{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px;}
+  .tema-icon{font-size:22px;flex-shrink:0;margin-top:2px;}
+  .tema-info{flex:1;}
+  .tema-name{font-size:16px;font-weight:700;color:var(--text);margin-bottom:3px;}
+  .tema-date{font-size:11px;color:var(--text3);font-family:var(--mono);}
+  .tema-status-badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:4px;font-family:var(--mono);flex-shrink:0;}
+  .sb-active{background:rgba(200,169,110,0.15);color:var(--accent);border:1px solid rgba(200,169,110,0.3);}
+  .sb-new{background:rgba(91,141,238,0.15);color:var(--blue);border:1px solid rgba(91,141,238,0.3);}
+  .sb-completed{background:rgba(76,175,130,0.15);color:var(--green);border:1px solid rgba(76,175,130,0.3);}
+
+  .tema-progress-wrap{margin-top:6px;}
+  .tema-progress-info{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:5px;}
+  .tema-progress-bar{height:5px;background:var(--surface2);border-radius:99px;overflow:hidden;}
+  .tema-progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;transition:width 0.4s;}
+
+  .tema-body{display:none;border-top:1px solid var(--border);padding:20px;}
+  .tema-body.open{display:block;}
+
+  /* SEKCE V TÉMATU */
+  .tema-section{margin-bottom:20px;}
+  .tema-section-title{font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+  .tema-desc-box{background:var(--surface2);border-radius:8px;padding:12px 14px;font-size:13px;color:var(--text2);line-height:1.6;border-left:3px solid var(--accent);}
+  .tema-reaction-box{background:var(--surface2);border-radius:8px;padding:12px 14px;font-size:13px;color:var(--text2);line-height:1.6;border-left:3px solid var(--blue);}
+
+  /* ÚKOLY */
+  .ukol-list{display:flex;flex-direction:column;gap:8px;}
+  .ukol-item{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;}
+  .ukol-item.done-ukol{opacity:0.6;}
+  .ukol-top{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;}
+  .ukol-check{width:20px;height:20px;border-radius:6px;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;margin-top:1px;}
+  .ukol-check.checked{background:var(--green);border-color:var(--green);}
+  .ukol-check.checked::after{content:'✓';color:#0d0f14;font-size:11px;font-weight:700;}
+  .ukol-text{flex:1;font-size:13px;color:var(--text);line-height:1.4;}
+  .ukol-text.striked{text-decoration:line-through;color:var(--text3);}
+  .ukol-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:15px;padding:2px 4px;}
+  .ukol-del:hover{color:var(--red);}
+  .ukol-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .ukol-deadline{font-size:11px;color:var(--text3);font-family:var(--mono);}
+  .ukol-deadline.overdue{color:var(--red);}
+  .ukol-plneni{display:flex;align-items:center;gap:6px;margin-left:auto;}
+  .ukol-plneni-label{font-size:11px;color:var(--text3);}
+  .plneni-bar{width:60px;height:4px;background:var(--border);border-radius:99px;overflow:hidden;}
+  .plneni-fill{height:100%;background:var(--accent);border-radius:99px;transition:width 0.3s;}
+  .plneni-pct{font-size:11px;font-family:var(--mono);color:var(--accent);min-width:28px;text-align:right;}
+  .plneni-input{width:50px;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:12px;font-family:var(--mono);padding:3px 6px;outline:none;text-align:right;}
+  .plneni-input:focus{border-color:var(--accent);}
+
+  .btn-add-ukol{background:none;border:1.5px dashed var(--border);border-radius:7px;color:var(--text3);font-family:var(--sans);font-size:12px;font-weight:500;padding:7px 12px;cursor:pointer;transition:all 0.15s;margin-top:6px;}
+  .btn-add-ukol:hover{border-color:var(--accent);color:var(--accent);}
+
+  /* HODNOCENÍ */
+  .hod-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px;}
+  .hod-btn{border:1.5px solid var(--border);background:var(--surface2);border-radius:8px;padding:10px 4px;text-align:center;cursor:pointer;transition:all 0.15s;}
+  .hod-btn .hod-num{font-size:18px;font-weight:700;font-family:var(--mono);}
+  .hod-btn .hod-label{font-size:9px;color:var(--text3);margin-top:2px;}
+  .hod-btn.sel-1{border-color:var(--red);background:rgba(224,82,82,0.12);} .hod-btn.sel-1 .hod-num{color:var(--red);}
+  .hod-btn.sel-2{border-color:#e07832;background:rgba(224,120,50,0.12);} .hod-btn.sel-2 .hod-num{color:#e07832;}
+  .hod-btn.sel-3{border-color:var(--yellow);background:rgba(224,168,50,0.12);} .hod-btn.sel-3 .hod-num{color:var(--yellow);}
+  .hod-btn.sel-4{border-color:#7bc842;background:rgba(123,200,66,0.12);} .hod-btn.sel-4 .hod-num{color:#7bc842;}
+  .hod-btn.sel-5{border-color:var(--green);background:rgba(76,175,130,0.12);} .hod-btn.sel-5 .hod-num{color:var(--green);}
+
+  /* TIMELINE */
+  .timeline{display:flex;flex-direction:column;gap:0;}
+  .tl-item{display:flex;gap:14px;padding:10px 0;position:relative;}
+  .tl-item:not(:last-child)::before{content:'';position:absolute;left:5px;top:20px;bottom:0;width:1px;background:var(--border);}
+  .tl-dot{width:11px;height:11px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:4px;z-index:1;}
+  .tl-content{flex:1;}
+  .tl-date{font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:3px;}
+  .tl-text{font-size:13px;color:var(--text);line-height:1.4;}
+  .tl-rating{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;background:rgba(200,169,110,0.12);color:var(--accent);margin-top:5px;font-family:var(--mono);}
+
+  /* FIELD */
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:11px;font-weight:600;color:var(--text2);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:7px;}
+  .field textarea,.field input,.field select{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--sans);font-size:14px;padding:10px 12px;outline:none;transition:border-color 0.15s;}
+  .field textarea:focus,.field input:focus,.field select:focus{border-color:var(--accent);}
+  .field textarea{resize:vertical;min-height:70px;}
+
+  /* BUTTONS */
+  .btn-primary{background:var(--accent);color:#0d0f14;border:none;border-radius:8px;font-family:var(--sans);font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;transition:background 0.15s;}
+  .btn-primary:hover{background:var(--accent2);}
+  .btn-secondary{background:var(--surface2);color:var(--text2);border:1.5px solid var(--border);border-radius:8px;font-family:var(--sans);font-size:13px;font-weight:500;padding:9px 16px;cursor:pointer;transition:all 0.15s;}
+  .btn-secondary:hover{border-color:var(--accent);color:var(--accent);}
+  .btn-danger{background:rgba(224,82,82,0.1);color:var(--red);border:1.5px solid rgba(224,82,82,0.3);border-radius:8px;font-family:var(--sans);font-size:12px;font-weight:500;padding:7px 12px;cursor:pointer;}
+  .btn-complete{background:rgba(76,175,130,0.1);color:var(--green);border:1.5px solid rgba(76,175,130,0.3);border-radius:8px;font-family:var(--sans);font-size:12px;font-weight:600;padding:7px 14px;cursor:pointer;}
+  .btn-row{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap;}
+  .btn-add-tema{background:none;border:1.5px dashed var(--border);border-radius:var(--radius);color:var(--text3);font-family:var(--sans);font-size:13px;font-weight:500;padding:14px;cursor:pointer;transition:all 0.15s;width:100%;margin-top:4px;}
+  .btn-add-tema:hover{border-color:var(--accent);color:var(--accent);}
+
+  /* MODAL */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity 0.2s;}
+  .modal-overlay.open{opacity:1;pointer-events:all;}
+  .modal{background:var(--surface);border-radius:20px 20px 0 0;padding:20px 20px 44px;width:100%;max-width:680px;margin:0 auto;transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);max-height:92vh;overflow-y:auto;}
+  .modal-overlay.open .modal{transform:translateY(0);}
+  .modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px;}
+  .modal-title{font-size:18px;font-weight:700;color:var(--text);margin-bottom:4px;}
+  .modal-sub{font-size:13px;color:var(--text3);margin-bottom:20px;}
+  .btn-save{width:100%;background:var(--accent);color:#0d0f14;border:none;border-radius:10px;font-family:var(--sans);font-size:15px;font-weight:700;padding:14px;cursor:pointer;margin-top:10px;}
+  .btn-save:hover{background:var(--accent2);}
+
+  .empty{text-align:center;padding:32px 20px;color:var(--text3);}
+  .empty-icon{font-size:36px;margin-bottom:10px;}
+
+  .divider{height:1px;background:var(--border);margin:16px 0;}
+
+  #person-screen{display:block;}
+  #main-screen{display:none;}
+</style>
+</head>
+<body>
+<header>
+  <a class="back-btn" href="index.html">‹ 4fin OS</a>
+  <div class="logo">4fin <span>//</span> Rozvojová konzultace</div>
+  <div id="clock"></div>
+</header>
+
+<div class="shell">
+  <div class="sync-bar">
+    <div class="sync-dot synced" id="sync-dot"></div>
+    <span id="sync-status">Připraven</span>
+  </div>
+
+  <!-- ── VÝBĚR OSOBY ── -->
+  <div id="person-screen">
+    <div class="screen-title">Rozvojová konzultace</div>
+    <div class="screen-sub">Vyber konzultanta</div>
+    <div class="person-grid" id="personGrid"></div>
+  </div>
+
+  <!-- ── HLAVNÍ OBRAZOVKA ── -->
+  <div id="main-screen">
+
+    <!-- POZNÁMKY Z BLOKU -->
+    <div id="notesCard" style="display:none;">
+      <div class="note-blok">
+        <div class="note-blok-title">📝 Poznámky z poznámkového bloku</div>
+        <div id="notesFromBlok"></div>
+      </div>
+    </div>
+
+    <!-- TÉMATA -->
+    <div class="section-title" id="temaSecTitle">Rozvojová témata</div>
+    <div id="temaList"></div>
+    <button class="btn-add-tema" onclick="openNewTema()">＋ Přidat nové rozvojové téma</button>
+
+    <!-- ZÁPIS -->
+    <div class="section-title" style="margin-top:32px;">Zápis z dnešní konzultace</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:20px;">
+      <div class="field">
+        <label>Celkový dojem & poznámky</label>
+        <textarea id="zapNotes" rows="3" placeholder="Jak konzultace proběhla? Co klíčového zaznělo?" oninput="autoSave()"></textarea>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>Datum příští konzultace</label>
+        <input type="date" id="nextDate" oninput="autoSave()">
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="goPersonSelect()">← Změnit osobu</button>
+      <button class="btn-primary" onclick="saveAndSend()">💾 Uložit & odeslat zápis</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── MODAL: NOVÉ TÉMA ── -->
+<div class="modal-overlay" id="newTemaModal" onclick="closeOnOverlay(event,'newTemaModal')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🌱 Nové rozvojové téma</div>
+    <div class="modal-sub">Představ nové téma konzultantovi</div>
+    <div class="field"><label>Název tématu</label><input id="nt-name" placeholder="např. Práce s doporučeními, Time management..."></div>
+    <div class="field"><label>Popis & záměr</label><textarea id="nt-desc" rows="3" placeholder="Co chceš rozvíjet? Proč je to důležité pro tohoto člověka?"></textarea></div>
+    <div class="field"><label>Reakce poradce</label><textarea id="nt-reaction" rows="2" placeholder="Jak to poradce přijal? Souhlasí? Co si myslí?"></textarea></div>
+    <div class="field">
+      <label>Frekvence hodnocení</label>
+      <select id="nt-freq">
+        <option value="weekly">Týdenně</option>
+        <option value="biweekly">Každé 2 týdny</option>
+        <option value="monthly">Měsíčně</option>
+      </select>
+    </div>
+    <button class="btn-save" onclick="saveNewTema()">✅ Přidat téma</button>
+  </div>
+</div>
+
+<!-- ── MODAL: PŘIDAT ÚKOL ── -->
+<div class="modal-overlay" id="ukolModal" onclick="closeOnOverlay(event,'ukolModal')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="ukol-modal-title">Přidat úkol</div>
+    <div class="modal-sub" id="ukol-modal-sub"></div>
+    <div class="field"><label>Popis úkolu</label><textarea id="ukol-text" rows="3" placeholder="Co konkrétně udělá?"></textarea></div>
+    <div class="field">
+      <label>Zodpovídá</label>
+      <select id="ukol-owner">
+        <option value="martin">👤 Martin (já)</option>
+        <option value="consult">👤 Poradce</option>
+        <option value="oba">👥 Oba</option>
+      </select>
+    </div>
+    <div class="field"><label>Termín splnění</label><input type="date" id="ukol-deadline"></div>
+    <button class="btn-save" onclick="saveUkol()">✅ Přidat úkol</button>
+  </div>
+</div>
+
+<!-- ── MODAL: HODNOCENÍ ── -->
+<div class="modal-overlay" id="hodModal" onclick="closeOnOverlay(event,'hodModal')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="hod-modal-title">Hodnocení tématu</div>
+    <div class="modal-sub">Jak se daří zavádět do praxe?</div>
+    <div class="field">
+      <label>Hodnocení (1 = nezačal · 5 = plně zavedeno)</label>
+      <div class="hod-grid" id="hod-grid"></div>
+    </div>
+    <div class="field"><label>✅ Co se povedlo?</label><textarea id="hod-good" rows="2" placeholder="Konkrétní příklady z praxe..."></textarea></div>
+    <div class="field"><label>⚠️ Co ještě nefunguje?</label><textarea id="hod-bad" rows="2" placeholder="Kde jsou překážky?"></textarea></div>
+    <div class="field"><label>📌 Poznámka</label><textarea id="hod-note" rows="2" placeholder="Cokoliv důležitého..."></textarea></div>
+    <button class="btn-save" onclick="saveHodnoceni()">✅ Uložit hodnocení</button>
+  </div>
+</div>
+
+<script>
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbyqnJsAlmzOAntypivM5oiLt8twpNJkJrUaK4D-rkvQPzFC_btwUrC8ivasYrnWbdsM6g/exec';
+
+const PEOPLE=[
+  {id:'truhlar',     name:'Truhlář, Luboš',    short:'Luboš',    role:'Oblastní ředitel',  badge:'director',   email:'lubos.truhlar@4fin.cz'},
+  {id:'bugaeva',     name:'Bugaeva, Marina',   short:'Marina',   role:'TOP konzultant II', badge:'consultant', email:'marina.bugaeva@4fin.cz'},
+  {id:'honcharenko', name:'Honcharenko, Olha', short:'Olha',     role:'Manažer',           badge:'manager',    email:'olha.honcharenko@4fin.cz'},
+  {id:'kruts',       name:'Kruts, Nataliia',   short:'Nataliia', role:'Manažer',           badge:'manager',    email:'natalia.kruts@4fin.cz'},
+];
+
+let selectedPerson=null;
+let currentUkolTema=null;
+let currentUkolOwner=null;
+let currentHodTema=null;
+let currentHodRating=0;
+let allData={};
+
+function pad(n){return String(n).padStart(2,'0');}
+function updateClock(){const now=new Date();document.getElementById('clock').textContent=pad(now.getHours())+':'+pad(now.getMinutes());}
+updateClock();setInterval(updateClock,30000);
+
+function setSyncStatus(state,text){
+  document.getElementById('sync-dot').className='sync-dot '+state;
+  document.getElementById('sync-status').textContent=text;
+}
+
+// ── DATA ──
+function loadAll(){try{allData=JSON.parse(localStorage.getItem('4fin_rozv2')||'{}');}catch(e){allData={};}}
+function getD(id){if(!allData[id])allData[id]={temata:[],zapis:{}};return allData[id];}
+function saveAll(){localStorage.setItem('4fin_rozv2',JSON.stringify(allData));setSyncStatus('synced','Uloženo ✓');}
+function autoSave(){if(!selectedPerson)return;const d=getD(selectedPerson.id);d.zapis={notes:document.getElementById('zapNotes').value,nextDate:document.getElementById('nextDate').value};saveAll();}
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded',()=>{
+  loadAll();
+  buildPersonGrid();
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('nextDate').value=today;
+  // default deadline +7d
+  const def=new Date();def.setDate(def.getDate()+7);
+  document.getElementById('ukol-deadline').value=def.toISOString().split('T')[0];
+});
+
+function buildPersonGrid(){
+  const grid=document.getElementById('personGrid');
+  grid.innerHTML='';
+  PEOPLE.forEach(p=>{
+    const temata=getD(p.id).temata||[];
+    const active=temata.filter(t=>t.status!=='completed').length;
+    const completed=temata.filter(t=>t.status==='completed').length;
+    const btn=document.createElement('button');
+    btn.className='person-btn';
+    btn.innerHTML=`
+      <div class="person-name">${p.name.split(',')[0]}<br><span style="font-weight:400;color:var(--text2);font-size:13px;">${(p.name.split(',')[1]||'').trim()}</span></div>
+      <div class="person-role">${p.role}</div>
+      <div class="badge badge-${p.badge}">${p.badge==='manager'?'Manažer':p.badge==='director'?'Ředitel':'Konzultant'}</div>
+      ${active>0||completed>0?`<div class="person-count">📌 ${active} aktivních${completed>0?` · ✅ ${completed} zavedených`:''}</div>`:''}
+    `;
+    btn.onclick=()=>selectPerson(p.id);
+    grid.appendChild(btn);
+  });
+}
+
+function selectPerson(id){
+  selectedPerson=PEOPLE.find(p=>p.id===id);
+  document.getElementById('person-screen').style.display='none';
+  document.getElementById('main-screen').style.display='block';
+  document.getElementById('temaSecTitle').textContent=`Rozvojová témata — ${selectedPerson.short}`;
+  const d=getD(selectedPerson.id);
+  document.getElementById('zapNotes').value=d.zapis?.notes||'Posílám zápis z rozvojové konzultace.';
+  if(d.zapis?.nextDate)document.getElementById('nextDate').value=d.zapis.nextDate;
+  loadNotes();
+  renderTemata();
+  setSyncStatus('synced','Připraven · '+selectedPerson.short);
+}
+
+function goPersonSelect(){
+  document.getElementById('person-screen').style.display='block';
+  document.getElementById('main-screen').style.display='none';
+  buildPersonGrid();
+}
+
+// ── POZNÁMKY ──
+function loadNotes(){
+  let notes=[];
+  try{notes=JSON.parse(localStorage.getItem('4fin_notes_v2')||'[]');}catch(e){}
+  const pn=notes.filter(n=>n.personId===selectedPerson.id&&n.type==='rozv');
+  const card=document.getElementById('notesCard');
+  if(!pn.length){card.style.display='none';return;}
+  card.style.display='block';
+  document.getElementById('notesFromBlok').innerHTML=pn.map(n=>`
+    <div class="note-item">
+      <div class="note-item-text">${esc(n.text)}</div>
+      <div class="note-item-date">${new Date(n.created).toLocaleDateString('cs-CZ',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+    </div>`).join('');
+}
+
+// ── RENDER TÉMAT ──
+function renderTemata(){
+  const d=getD(selectedPerson.id);
+  const list=document.getElementById('temaList');
+  if(!d.temata.length){
+    list.innerHTML='<div class="empty"><div class="empty-icon">🌱</div><div style="font-size:14px;margin-bottom:4px;">Zatím žádná rozvojová témata</div><div style="font-size:12px;">Přidej první téma kliknutím níže</div></div>';
+    return;
+  }
+  const sorted=[...d.temata].map((t,i)=>({...t,_idx:i})).sort((a,b)=>{
+    const order={active:0,new:1,completed:2};
+    return (order[a.status]||1)-(order[b.status]||1);
+  });
+  list.innerHTML=sorted.map(t=>renderTema(t,t._idx)).join('');
+}
+
+function renderTema(t,idx){
+  const statusLabel={active:'🔄 Aktivní',new:'🆕 Nové',completed:'✅ Zavedeno 100%'};
+  const statusCls={active:'sb-active',new:'sb-new',completed:'sb-completed'};
+  const cardCls={active:'status-active',new:'status-new',completed:'status-completed'};
+  const progress=t.progress||0;
+  const today=new Date();
+
+  // ÚKOLY PORADCE
+  const ukolyPoradce=(t.ukoly||[]).filter(u=>u.owner==='consult'||u.owner==='oba');
+  const ukolyMartin=(t.ukoly||[]).filter(u=>u.owner==='martin'||u.owner==='oba');
+  const allUkoly=t.ukoly||[];
+  const doneCount=allUkoly.filter(u=>u.done).length;
+
+  // POSLEDNÍ HODNOCENÍ
+  const hods=t.hodnoceni||[];
+  const lastHod=hods[hods.length-1];
+
+  const ukolHtml=(ukoly,tIdx,label,color)=>{
+    if(!ukoly.length) return '';
+    return `
+      <div class="tema-section">
+        <div class="tema-section-title" style="color:${color};">${label}</div>
+        <div class="ukol-list">
+          ${ukoly.map(u=>{
+            const realIdx=allUkoly.indexOf(u);
+            const isOverdue=u.deadline&&!u.done&&new Date(u.deadline)<today;
+            const dl=u.deadline?new Date(u.deadline).toLocaleDateString('cs-CZ',{day:'numeric',month:'numeric',year:'numeric'}):'';
+            const pct=u.plneni||0;
+            return `<div class="ukol-item ${u.done?'done-ukol':''}">
+              <div class="ukol-top">
+                <div class="ukol-check ${u.done?'checked':''}" onclick="toggleUkol(${tIdx},${realIdx})"></div>
+                <div class="ukol-text ${u.done?'striked':''}">${esc(u.text)}</div>
+                <button class="ukol-del" onclick="delUkol(${tIdx},${realIdx})">×</button>
+              </div>
+              <div class="ukol-meta">
+                ${dl?`<div class="ukol-deadline ${isOverdue?'overdue':''}">📅 ${dl}${isOverdue?' ⚠️':''}</div>`:''}
+                <div class="ukol-plneni">
+                  <span class="ukol-plneni-label">Plnění:</span>
+                  <div class="plneni-bar"><div class="plneni-fill" style="width:${pct}%"></div></div>
+                  <input class="plneni-input" type="number" min="0" max="100" value="${pct}" onchange="setPlneni(${tIdx},${realIdx},this.value)" title="% plnění">%
+                </div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+  };
+
+  const hodHtml=hods.length?`
+    <div class="tema-section">
+      <div class="tema-section-title">📊 Historie hodnocení</div>
+      <div class="timeline">
+        ${hods.slice(-4).reverse().map(h=>`
+          <div class="tl-item">
+            <div class="tl-dot"></div>
+            <div class="tl-content">
+              <div class="tl-date">${new Date(h.date).toLocaleDateString('cs-CZ',{day:'numeric',month:'numeric',year:'numeric'})}</div>
+              ${h.good?`<div class="tl-text">✅ ${esc(h.good)}</div>`:''}
+              ${h.bad?`<div class="tl-text" style="color:var(--text3);">⚠️ ${esc(h.bad)}</div>`:''}
+              <div class="tl-rating">⭐ ${h.rating}/5</div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`:'';
+
+  return `<div class="tema-card ${cardCls[t.status]||''}">
+    <div class="tema-top" onclick="toggleTema('tema-body-${idx}')">
+      <div class="tema-header">
+        <div class="tema-icon">🌱</div>
+        <div class="tema-info">
+          <div class="tema-name">${esc(t.name)}</div>
+          <div class="tema-date">Přidáno ${new Date(t.created).toLocaleDateString('cs-CZ',{day:'numeric',month:'numeric',year:'numeric'})}${lastHod?` · Poslední hodnocení: ${lastHod.rating}/5`:''}</div>
+        </div>
+        <div class="tema-status-badge ${statusCls[t.status]||'sb-new'}">${statusLabel[t.status]||'Nové'}</div>
+      </div>
+      <div class="tema-progress-wrap">
+        <div class="tema-progress-info">
+          <span>Zavedení do praxe</span>
+          <span>${progress}% ${allUkoly.length?`· ${doneCount}/${allUkoly.length} úkolů`:''}</span>
+        </div>
+        <div class="tema-progress-bar"><div class="tema-progress-fill" style="width:${progress}%"></div></div>
+      </div>
+    </div>
+
+    <div class="tema-body" id="tema-body-${idx}">
+
+      ${t.desc?`<div class="tema-section">
+        <div class="tema-section-title">📝 Popis & záměr</div>
+        <div class="tema-desc-box">${esc(t.desc)}</div>
+      </div>`:''}
+
+      ${t.reaction?`<div class="tema-section">
+        <div class="tema-section-title" style="color:var(--blue);">💬 Reakce poradce</div>
+        <div class="tema-reaction-box">${esc(t.reaction)}</div>
+      </div>`:''}
+
+      ${ukolHtml(ukolyPoradce,idx,'📋 Úkoly poradce','var(--green)')}
+      <button class="btn-add-ukol" onclick="openUkol(${idx},'consult')">＋ Přidat úkol poradci</button>
+
+      <div class="divider"></div>
+
+      ${ukolHtml(ukolyMartin,idx,'👤 Moje úkoly (Martin)','var(--accent)')}
+      <button class="btn-add-ukol" onclick="openUkol(${idx},'martin')">＋ Přidat svůj úkol</button>
+
+      <div class="divider"></div>
+
+      <div class="tema-section">
+        <div class="tema-section-title">📊 Hodnocení pokroku</div>
+        <div class="hod-grid" id="hod-inline-${idx}">
+          ${['Nezačal','Zkouší','Občas','Často','Vždy'].map((l,i)=>`
+            <div class="hod-btn ${lastHod&&lastHod.rating===i+1?'sel-'+(i+1):''}" onclick="openHod(${idx})">
+              <div class="hod-num">${i+1}</div>
+              <div class="hod-label">${l}</div>
+            </div>`).join('')}
+        </div>
+        <button class="btn-secondary" style="width:100%;margin-top:10px;font-size:12px;" onclick="openHod(${idx})">📊 Zadat hodnocení</button>
+      </div>
+
+      ${hodHtml}
+
+      <div class="divider"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        ${t.status!=='completed'?`<button class="btn-complete" onclick="completeTema(${idx})">✅ Zavedeno 100% — uzavřít téma</button>`:''}
+        <button class="btn-danger" onclick="deleteTema(${idx})">🗑 Smazat téma</button>
+      </div>
+
+    </div>
+  </div>`;
+}
+
+function toggleTema(id){document.getElementById(id)?.classList.toggle('open');}
+
+// ── NOVÉ TÉMA ──
+function openNewTema(){
+  ['nt-name','nt-desc','nt-reaction'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('newTemaModal').classList.add('open');
+  setTimeout(()=>document.getElementById('nt-name').focus(),400);
+}
+
+function saveNewTema(){
+  const name=document.getElementById('nt-name').value.trim();
+  if(!name){alert('Zadej název tématu!');return;}
+  const d=getD(selectedPerson.id);
+  d.temata.push({
+    id:Date.now().toString(),
+    name,
+    desc:document.getElementById('nt-desc').value.trim(),
+    reaction:document.getElementById('nt-reaction').value.trim(),
+    freq:document.getElementById('nt-freq').value,
+    status:'new',progress:0,ukoly:[],hodnoceni:[],created:Date.now()
+  });
+  saveAll();
+  document.getElementById('newTemaModal').classList.remove('open');
+  renderTemata();
+  // Auto-open new tema
+  setTimeout(()=>{
+    const d2=getD(selectedPerson.id);
+    const newIdx=d2.temata.length-1;
+    const el=document.getElementById(`tema-body-${newIdx}`);
+    if(el)el.classList.add('open');
+  },100);
+}
+
+// ── ÚKOLY ──
+function openUkol(tIdx,owner){
+  currentUkolTema=tIdx;
+  currentUkolOwner=owner;
+  const d=getD(selectedPerson.id);
+  const t=d.temata[tIdx];
+  document.getElementById('ukol-modal-title').textContent=owner==='martin'?'Můj úkol':'Úkol poradce';
+  document.getElementById('ukol-modal-sub').textContent=t.name;
+  document.getElementById('ukol-text').value='';
+  document.getElementById('ukol-owner').value=owner;
+  const def=new Date();def.setDate(def.getDate()+7);
+  document.getElementById('ukol-deadline').value=def.toISOString().split('T')[0];
+  document.getElementById('ukolModal').classList.add('open');
+  setTimeout(()=>document.getElementById('ukol-text').focus(),400);
+}
+
+function saveUkol(){
+  const text=document.getElementById('ukol-text').value.trim();
+  if(!text){alert('Zadej popis úkolu!');return;}
+  const d=getD(selectedPerson.id);
+  const t=d.temata[currentUkolTema];
+  if(!t.ukoly)t.ukoly=[];
+  t.ukoly.push({
+    text,
+    owner:document.getElementById('ukol-owner').value,
+    deadline:document.getElementById('ukol-deadline').value,
+    done:false,plneni:0,created:Date.now()
+  });
+  t.status='active';
+  saveAll();
+  document.getElementById('ukolModal').classList.remove('open');
+  renderTemata();
+  setTimeout(()=>document.getElementById(`tema-body-${currentUkolTema}`)?.classList.add('open'),50);
+}
+
+function toggleUkol(tIdx,uIdx){
+  const d=getD(selectedPerson.id);
+  const u=d.temata[tIdx].ukoly[uIdx];
+  u.done=!u.done;
+  if(u.done)u.plneni=100;
+  updateProgress(tIdx);
+  saveAll();renderTemata();
+  setTimeout(()=>document.getElementById(`tema-body-${tIdx}`)?.classList.add('open'),50);
+}
+
+function delUkol(tIdx,uIdx){
+  const d=getD(selectedPerson.id);
+  d.temata[tIdx].ukoly.splice(uIdx,1);
+  updateProgress(tIdx);
+  saveAll();renderTemata();
+  setTimeout(()=>document.getElementById(`tema-body-${tIdx}`)?.classList.add('open'),50);
+}
+
+function setPlneni(tIdx,uIdx,val){
+  const d=getD(selectedPerson.id);
+  d.temata[tIdx].ukoly[uIdx].plneni=Math.min(100,Math.max(0,+val||0));
+  if(d.temata[tIdx].ukoly[uIdx].plneni===100)d.temata[tIdx].ukoly[uIdx].done=true;
+  updateProgress(tIdx);
+  saveAll();renderTemata();
+  setTimeout(()=>document.getElementById(`tema-body-${tIdx}`)?.classList.add('open'),50);
+}
+
+function updateProgress(tIdx){
+  const d=getD(selectedPerson.id);
+  const t=d.temata[tIdx];
+  if(!t.ukoly||!t.ukoly.length)return;
+  const avg=t.ukoly.reduce((s,u)=>s+(u.plneni||0),0)/t.ukoly.length;
+  // Kombinuj s hodnocením
+  const hods=t.hodnoceni||[];
+  const lastHod=hods[hods.length-1];
+  const hodPct=lastHod?lastHod.rating*20:0;
+  t.progress=Math.round((avg+hodPct)/2);
+}
+
+// ── HODNOCENÍ ──
+function openHod(idx){
+  currentHodTema=idx;currentHodRating=0;
+  const d=getD(selectedPerson.id);
+  document.getElementById('hod-modal-title').textContent=d.temata[idx].name;
+  ['hod-good','hod-bad','hod-note'].forEach(id=>document.getElementById(id).value='');
+  const grid=document.getElementById('hod-grid');
+  const labels=['Nezačal','Zkouší','Občas','Často','Vždy'];
+  grid.innerHTML=labels.map((l,i)=>`<div class="hod-btn" onclick="setHodRating(${i+1})"><div class="hod-num">${i+1}</div><div class="hod-label">${l}</div></div>`).join('');
+  document.getElementById('hodModal').classList.add('open');
+}
+
+function setHodRating(n){
+  currentHodRating=n;
+  document.querySelectorAll('#hod-grid .hod-btn').forEach((b,i)=>{b.className='hod-btn';if(i<n)b.classList.add('sel-'+n);});
+}
+
+function saveHodnoceni(){
+  if(!currentHodRating){alert('Vyber hodnocení 1-5!');return;}
+  const d=getD(selectedPerson.id);
+  const t=d.temata[currentHodTema];
+  if(!t.hodnoceni)t.hodnoceni=[];
+  t.hodnoceni.push({
+    rating:currentHodRating,
+    good:document.getElementById('hod-good').value.trim(),
+    bad:document.getElementById('hod-bad').value.trim(),
+    note:document.getElementById('hod-note').value.trim(),
+    date:Date.now()
+  });
+  // Update progress
+  const avg=t.hodnoceni.reduce((s,h)=>s+h.rating,0)/t.hodnoceni.length;
+  const ukolAvg=t.ukoly&&t.ukoly.length?t.ukoly.reduce((s,u)=>s+(u.plneni||0),0)/t.ukoly.length:avg*20;
+  t.progress=Math.round((ukolAvg+avg*20)/2);
+  t.status='active';
+  saveAll();
+  document.getElementById('hodModal').classList.remove('open');
+  renderTemata();
+  setTimeout(()=>document.getElementById(`tema-body-${currentHodTema}`)?.classList.add('open'),50);
+}
+
+function completeTema(idx){
+  const d=getD(selectedPerson.id);
+  d.temata[idx].status='completed';d.temata[idx].progress=100;
+  saveAll();renderTemata();
+}
+
+function deleteTema(idx){
+  if(!confirm('Opravdu smazat toto téma?'))return;
+  const d=getD(selectedPerson.id);
+  d.temata.splice(idx,1);
+  saveAll();renderTemata();
+}
+
+// ── ULOŽIT & ODESLAT ──
+async function saveAndSend(){
+  autoSave();
+  const d=getD(selectedPerson.id);
+  const p=selectedPerson;
+  setSyncStatus('syncing','Ukládám...');
+  try{
+    const row=[new Date().toISOString(),p.id,p.name,'rozv_zapis',
+      document.getElementById('zapNotes').value,
+      document.getElementById('nextDate').value,
+      JSON.stringify(d.temata),'rozv'];
+    await fetch(SCRIPT_URL+'?action=save_konzultace&data='+encodeURIComponent(JSON.stringify(row)));
+    setSyncStatus('synced','Uloženo ✓');
+    alert('✅ Zápis uložen do Google Sheets!\n\nOdesílání emailem bude dostupné v příštím kroce.');
+  }catch(e){
+    setSyncStatus('error','Uloženo lokálně');
+    alert('⚠️ Uloženo lokálně.');
+  }
+}
+
+function closeOnOverlay(e,id){if(e.target.classList.contains('modal-overlay'))document.getElementById(id).classList.remove('open');}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
+</script>
+</body>
+</html>
