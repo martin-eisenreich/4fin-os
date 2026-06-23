@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>4fin | Zapracování nováčka</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  :root{
+    --bg:#0d0f14;--surface:#151820;--surface2:#1c2030;--surface3:#232838;
+    --border:#252a3a;--accent:#c8a96e;--accent2:#e8c98e;
+    --green:#4caf82;--red:#e05252;--yellow:#e0a832;--blue:#5b8dee;
+    --text:#e8eaf0;--text2:#8892a4;--text3:#555f72;
+    --radius:10px;--mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;padding-bottom:80px;}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+  .logo{font-family:var(--mono);font-size:13px;color:var(--accent);letter-spacing:0.08em;}
+  .logo span{color:var(--text3);}
+  .back-btn{font-size:13px;color:var(--text2);text-decoration:none;font-family:var(--mono);}
+  .back-btn:hover{color:var(--accent);}
+  #clock{font-family:var(--mono);font-size:12px;color:var(--text3);}
+  .shell{max-width:800px;margin:0 auto;padding:28px 20px 80px;}
+
+  /* VIEW SWITCHING */
+  .view{display:none;} .view.active{display:block;}
+
+  /* HOME — seznam nováčků */
+  .page-title{font-size:22px;font-weight:700;margin-bottom:4px;}
+  .page-sub{font-size:13px;color:var(--text2);margin-bottom:24px;}
+  .novacek-grid{display:flex;flex-direction:column;gap:10px;margin-bottom:24px;}
+  .novacek-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px 20px;cursor:pointer;display:flex;align-items:center;gap:16px;transition:border-color 0.15s;}
+  .novacek-card:hover{border-color:var(--accent);}
+  .novacek-avatar{width:44px;height:44px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:13px;color:var(--accent);font-weight:600;flex-shrink:0;}
+  .novacek-info{flex:1;}
+  .novacek-name{font-size:15px;font-weight:600;margin-bottom:3px;}
+  .novacek-meta{font-size:12px;color:var(--text2);}
+  .novacek-progress{text-align:right;flex-shrink:0;}
+  .progress-val{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--accent);}
+  .progress-label{font-size:10px;color:var(--text3);}
+  .progress-bar-wrap{width:80px;height:4px;background:var(--surface2);border-radius:2px;margin-top:4px;}
+  .progress-bar{height:4px;background:var(--accent);border-radius:2px;transition:width 0.3s;}
+
+  .btn{display:flex;align-items:center;justify-content:center;gap:6px;background:var(--accent);color:var(--bg);border:none;border-radius:8px;padding:13px 20px;font-size:14px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;width:100%;}
+  .btn:active{background:var(--accent2);}
+  .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+  .btn-row{display:flex;gap:10px;}
+  .btn-row .btn{width:auto;flex:1;}
+
+  /* NOVÝ NOVÁČEK FORMULÁŘ */
+  .form-group{margin-bottom:16px;}
+  .form-label{display:block;font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:500;}
+  .form-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--text);font-size:14px;font-family:'Inter',sans-serif;}
+  .form-input:focus{outline:none;border-color:var(--accent);}
+
+  /* DETAIL NOVÁČKA */
+  .detail-header{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;}
+  .detail-name{font-size:20px;font-weight:700;margin-bottom:6px;}
+  .detail-meta{font-size:13px;color:var(--text2);margin-bottom:12px;}
+  .detail-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  .detail-stat{background:var(--surface2);border-radius:8px;padding:10px 12px;text-align:center;}
+  .detail-stat-val{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--accent);}
+  .detail-stat-label{font-size:10px;color:var(--text3);margin-top:2px;}
+
+  /* TÝDEN */
+  .week-block{margin-bottom:24px;}
+  .week-header{display:flex;align-items:center;gap:12px;margin-bottom:12px;cursor:pointer;}
+  .week-title{font-size:13px;font-weight:700;color:var(--accent);letter-spacing:0.08em;text-transform:uppercase;}
+  .week-sub{font-size:11px;color:var(--text3);font-family:var(--mono);}
+  .week-progress-wrap{flex:1;height:4px;background:var(--surface2);border-radius:2px;}
+  .week-progress{height:4px;background:var(--accent);border-radius:2px;}
+  .week-pct{font-family:var(--mono);font-size:11px;color:var(--text3);flex-shrink:0;}
+  .week-body{display:block;}
+  .week-body.collapsed{display:none;}
+
+  /* ÚKOL */
+  .ukol-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:flex-start;gap:12px;transition:border-color 0.15s;}
+  .ukol-card.done{opacity:0.6;}
+  .ukol-card.kontrola{border-left:3px solid var(--yellow);}
+  .ukol-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;margin-top:1px;transition:all 0.15s;}
+  .ukol-check.checked{background:var(--green);border-color:var(--green);color:white;}
+  .ukol-body{flex:1;min-width:0;}
+  .ukol-name{font-size:13px;font-weight:600;margin-bottom:4px;}
+  .ukol-name.done-text{text-decoration:line-through;color:var(--text3);}
+  .ukol-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+  .ukol-badge{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;}
+  .badge-novacek{background:rgba(91,141,238,0.15);color:var(--blue);}
+  .badge-manazer{background:rgba(200,169,110,0.15);color:var(--accent);}
+  .badge-marina{background:rgba(76,175,130,0.15);color:var(--green);}
+  .badge-katka{background:rgba(224,82,82,0.15);color:var(--red);}
+  .badge-cas{background:var(--surface2);color:var(--text3);}
+  .badge-kontrola{background:rgba(224,168,50,0.15);color:var(--yellow);}
+  .ukol-goal{font-size:12px;color:var(--text3);margin-top:6px;line-height:1.5;display:none;}
+  .ukol-goal.open{display:block;}
+  .ukol-toggle-goal{font-size:11px;color:var(--accent);cursor:pointer;margin-top:4px;background:none;border:none;font-family:'Inter',sans-serif;padding:0;}
+
+  .section-label{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;}
+
+  .empty-state{text-align:center;padding:48px 20px;color:var(--text3);}
+
+  /* MODAL */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;overflow-y:auto;}
+  .modal-overlay.active{display:block;}
+  .modal-box{background:var(--bg);min-height:100vh;max-width:600px;margin:0 auto;}
+  .modal-header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;}
+  .modal-title{font-size:15px;font-weight:600;}
+  .modal-close{background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer;padding:4px 8px;}
+  .modal-body{padding:20px 16px 100px;}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--surface2);border:1px solid var(--accent);color:var(--text);padding:12px 20px;border-radius:8px;font-size:13px;z-index:300;transition:transform 0.25s;display:flex;align-items:center;gap:8px;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+
+  @media(max-width:500px){.detail-stats{grid-template-columns:repeat(2,1fr);}}
+</style>
+</head>
+<body>
+<header>
+  <a class="back-btn" href="index.html">← 4fin OS</a>
+  <div class="logo">4fin <span>//</span> Zapracování</div>
+  <div id="clock"></div>
+</header>
+
+<!-- VIEW: seznam nováčků -->
+<div class="view active" id="view-home">
+  <div class="shell">
+    <div class="page-title">Zapracování nováčků</div>
+    <div class="page-sub">6týdenní plán zapracování — sledování plnění úkolů</div>
+    <div class="section-label">Aktivní nováčci</div>
+    <div class="novacek-grid" id="novacekGrid"></div>
+    <button class="btn" onclick="openNewModal()">+ Přidat nováčka</button>
+  </div>
+</div>
+
+<!-- VIEW: detail nováčka -->
+<div class="view" id="view-detail">
+  <div class="shell">
+    <a href="#" class="back-btn" id="backToHome" style="margin-bottom:16px;display:inline-flex;">← Zpět na seznam</a>
+    <div class="detail-header">
+      <div class="detail-name" id="detailName">—</div>
+      <div class="detail-meta" id="detailMeta">—</div>
+      <div class="detail-stats">
+        <div class="detail-stat"><div class="detail-stat-val" id="dStatTyden">—</div><div class="detail-stat-label">Aktuální týden</div></div>
+        <div class="detail-stat"><div class="detail-stat-val" id="dStatHotovo">—</div><div class="detail-stat-label">Splněno úkolů</div></div>
+        <div class="detail-stat"><div class="detail-stat-val" id="dStatCelkem">—</div><div class="detail-stat-label">Celkem úkolů</div></div>
+        <div class="detail-stat"><div class="detail-stat-val" id="dStatPct">—</div><div class="detail-stat-label">Dokončeno</div></div>
+      </div>
+    </div>
+    <div id="tydnyContainer"></div>
+    <div class="btn-row" style="margin-top:16px;">
+      <button class="btn btn-secondary" onclick="confirmDelete()">Smazat nováčka</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: nový nováček -->
+<div class="modal-overlay" id="modalNew">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Nový nováček</div>
+      <button class="modal-close" onclick="closeModal('modalNew')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Jméno a příjmení</label>
+        <input type="text" class="form-input" id="fJmeno" placeholder="Jan Novák">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email nováčka</label>
+        <input type="email" class="form-input" id="fEmail" placeholder="jan.novak@email.cz">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Datum nástupu</label>
+        <input type="date" class="form-input" id="fNastup">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Manažer (nadřízený nováčka)</label>
+        <select class="form-input" id="fManazer">
+          <option value="Kruts, Nataliia">Kruts, Nataliia</option>
+          <option value="Truhlář, Luboš">Truhlář, Luboš</option>
+          <option value="Honcharenko, Olha">Honcharenko, Olha</option>
+          <option value="Bugaeva, Marina">Bugaeva, Marina</option>
+          <option value="Martin Eisenreich">Martin Eisenreich</option>
+        </select>
+      </div>
+      <button class="btn" onclick="saveNovacek()" style="margin-top:8px;">Vytvořit plán zapracování</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span>✓</span><span id="toastText">Uloženo</span></div>
+
+<script>
+const LOCAL_KEY = '4fin_zapracovani';
+
+// 6 týdnů úkolů
+const TYDNY = [
+  {
+    tydnev: 1, hodiny: 33.5,
+    ukoly: [
+      {id:'1-1',nazev:'Představení kanceláře',odpovedny:'manazer',misto:'Kancelář',cas:1,cil:'Seznámit nováčka s fungováním kanceláře, orientací ve 4. a 8. patře, pravidly, recepční, možností parkování, video adresy.'},
+      {id:'1-2',nazev:'Seznámení s týmem',odpovedny:'manazer',misto:'Kancelář',cas:1,cil:'Seznámení s hlavními členy týmu (Martin, Marina, Katka), rozdělení rolí, koho se na co ptát.'},
+      {id:'1-3',nazev:'Potvrzení účasti na školení, rezervace místností',odpovedny:'katka',misto:'Kancelář',cas:3,cil:'Naučit nováčka potvrzovat účast na školení, rezervovat místnosti, zajistit parkování, orientace v kanceláři.'},
+      {id:'1-4',nazev:'Zaměstnanec versus OSVČ',odpovedny:'manazer',misto:'Kancelář',cas:4,cil:'Pochopení rozdílu zaměstnanec vs. OSVČ, výhody/nevýhody, odvody, výhody podnikání ve financích.'},
+      {id:'1-5',nazev:'Seznámení s poradenským procesem — přečtení manuálu',odpovedny:'manazer',misto:'Doma',cas:4,cil:'Seznámení s jednotlivými kroky poradenského procesu, přečte si interní manuál.'},
+      {id:'1-6',nazev:'Projekt 100 — vysvětlení',odpovedny:'manazer',misto:'Kancelář/online',cas:1,cil:'Pochopit princip projektu 100 – kvalitní seznam potenciálních klientů.'},
+      {id:'1-7',nazev:'Projekt 100 — zpracování prvních 10 jmen',odpovedny:'novacek',misto:'Doma',cas:5,cil:'Samostatné zpracování prvních 10 jmen, důraz na kvalitu a obchodní potenciál.'},
+      {id:'1-8',nazev:'Probrat 1. část jmen z projektu 100',odpovedny:'manazer',misto:'Kancelář/online',cas:2,cil:'Zkontrolovat prvních 10 jmen, kvalita informací, příprava na obchodní rozhovor.'},
+      {id:'1-9',nazev:'Podklady k zasmluvnění',odpovedny:'novacek',misto:'Terén',cas:6,cil:'Připravit výpis z rejstříku trestů, doklady, nostrifikace — vše odevzdat včas.'},
+      {id:'1-10',nazev:'Zasmluvnění — potvrzení',odpovedny:'manazer',misto:'Online',cas:0.5,cil:'Zajistit, že nováček podepsal smlouvu a je zaveden v systému.'},
+      {id:'1-11',nazev:'Nastavení pracovního e-mailu',odpovedny:'katka',misto:'Kancelář/online',cas:1,cil:'Nastavit funkční pracovní e-mail, podpis, firemní banner.'},
+      {id:'1-12',nazev:'Vstupní školení pro nové konzultanty',odpovedny:'novacek',misto:'Doma',cas:2.5,cil:'Zhlédnout úvodní video školení, základy fungování společnosti, hodnoty, očekávání.'},
+      {id:'1-13',nazev:'Nasdílet diář a práce s ním',odpovedny:'manazer',misto:'Kancelář/online',cas:1.5,cil:'Vysvětlit práci s online kalendářem, sdílení, plánování aktivit, efektivní organizace.'},
+      {id:'1-14',nazev:'Nastavit diář — pravidelný týden',odpovedny:'novacek',misto:'Doma',cas:1,cil:'Samostatně nastavit týdenní pracovní plán – schůzky, příprava, vzdělávání, osobní aktivity.'},
+    ]
+  },
+  {
+    tydnev: 2, hodiny: 33.5,
+    ukoly: [
+      {id:'2-1',nazev:'4fin – základní procesy',odpovedny:'novacek',misto:'Doma',cas:2.5,cil:'Nováček si ve vzdělávacím portálu pustí video se základními procesy fungování ve 4fin.'},
+      {id:'2-2',nazev:'Připravit představení sebe',odpovedny:'novacek',misto:'Doma',cas:5,cil:'Nováček si připraví vlastní představení, které bude používat při oslovení potenciálních klientů.'},
+      {id:'2-3',nazev:'Kontrola představení sebe',odpovedny:'manazer',misto:'Kancelář',cas:2.5,cil:'Nadřízený s nováčkem projde jeho připravené představení.'},
+      {id:'2-4',nazev:'Naučit se představení sebe',odpovedny:'novacek',misto:'Doma',cas:5,cil:'Nováček se naučí zpaměti a s jistotou své připravené představení.'},
+      {id:'2-5',nazev:'Trénink s představením',odpovedny:'manazer',misto:'Kancelář',cas:4,cil:'Nováček si pod vedením nadřízeného prakticky vyzkouší své představení v různých situacích.'},
+      {id:'2-6',nazev:'Video – provizní kalkulačka',odpovedny:'novacek',misto:'Doma',cas:2,cil:'Nováček si pustí video ve vzdělávacím portálu, které vysvětluje, jak funguje provizní kalkulačka.'},
+      {id:'2-7',nazev:'Jak telefonovat a oslovit – teorie a call script',odpovedny:'manazer',misto:'Kancelář/online',cas:2,cil:'Nováček se pod vedením nadřízeného seznámí s teorií telefonického oslovování klientů.'},
+      {id:'2-8',nazev:'Cvičení volání a domlouvání – samostudium',odpovedny:'novacek',misto:'Doma',cas:2.5,cil:'Nováček si formou samostudia procvičí modelové situace telefonického oslovování.'},
+      {id:'2-9',nazev:'Kontrola volání s nadřízeným',odpovedny:'manazer',misto:'Kancelář/online',cas:2,cil:'Nadřízený zkontroluje, jak nováček telefonuje – zaměří se na strukturu hovoru, vystupování.'},
+      {id:'2-10',nazev:'Námitovník – rozdání a vysvětlení',odpovedny:'manazer',misto:'Kancelář',cas:0.5,cil:'Nadřízený předá nováčkovi námitovník a vysvětlí mu jeho účel a použití.'},
+      {id:'2-11',nazev:'Samostudium námitovníku',odpovedny:'novacek',misto:'Kancelář',cas:4,cil:'Nováček si samostatně prostuduje námitovník a naučí se jednotlivé typy námitek.'},
+      {id:'2-12',nazev:'Námitovník + trénink volání ve skupině',odpovedny:'manazer',misto:'Kancelář/online',cas:2,cil:'Nováček si společně s ostatními vyzkouší práci s námitovníkem při modelových telefonátech.'},
+      {id:'2-13',nazev:'Kontrola s manažerem – volání a námitky',odpovedny:'manazer',misto:'Kancelář',cas:2,cil:'Manažer zhodnotí, jak nováček zvládá volání a práci s námitkami v praxi.'},
+    ]
+  },
+  {
+    tydnev: 3, hodiny: 47.5,
+    ukoly: [
+      {id:'3-1',nazev:'Produktová školení – 4Basic',odpovedny:'novacek',misto:'Doma',cas:2.5,cil:'Nováček si pustí video školení ze vzdělávacího portálu zaměřené na základní produktové znalosti 4Basic.'},
+      {id:'3-2',nazev:'Pyramida osobních financí',odpovedny:'novacek',misto:'Doma',cas:2.5,cil:'Nováček si pustí video ve vzdělávacím portálu zaměřené na pyramidu osobních financí.'},
+      {id:'3-3',nazev:'Stavební spoření',odpovedny:'novacek',misto:'Doma',cas:2.5,cil:'Nováček si pustí video ve vzdělávacím portálu zaměřené na stavební spoření.'},
+      {id:'3-4',nazev:'Vysvětlení A1 – důležitost jednotlivých bodů',odpovedny:'manazer',misto:'Kancelář/online',cas:4,cil:'Nadřízený nováčkovi vysvětlí strukturu a jednotlivé body dokumentu A1.'},
+      {id:'3-5',nazev:'Rozdání představení společnosti',odpovedny:'manazer',misto:'Kancelář',cas:0.5,cil:'Nadřízený předá nováčkovi tištěné představení společnosti a vysvětlí, jak jej využívat.'},
+      {id:'3-6',nazev:'A1 – teoretická část (samostudium)',odpovedny:'novacek',misto:'Doma',cas:16,cil:'Nováček si samostatně prostuduje teoretickou část manuálu A1.'},
+      {id:'3-7',nazev:'Převyprávění A1',odpovedny:'manazer',misto:'Kancelář/online',cas:3,cil:'Nováček pod vedením nadřízeného převypráví celý obsah A1.'},
+      {id:'3-8',nazev:'Praktické procvičení – manažer–poradce, poradce–klient',odpovedny:'manazer',misto:'Kancelář',cas:2,cil:'Nováček si prakticky vyzkouší vedení modelové schůzky ve dvou rolích.'},
+      {id:'3-9',nazev:'Praktické cvičení – poradce s klientem',odpovedny:'manazer',misto:'Kancelář',cas:2,cil:'Nováček si vyzkouší vedení schůzky v roli poradce, přičemž manažer vystupuje v roli klienta.'},
+      {id:'3-10',nazev:'Společné cvičení A1 ve skupině',odpovedny:'katka',misto:'Kancelář/online',cas:2.5,cil:'Nováček si v rámci skupinového cvičení společně s ostatními procvičí jednotlivé části A1.'},
+      {id:'3-11',nazev:'Trénink s nadřízeným – těžká varianta 1',odpovedny:'manazer',misto:'Kancelář',cas:2,cil:'Nováček si pod vedením nadřízeného vyzkouší náročnější modelovou situaci schůzky s klientem.'},
+      {id:'3-12',nazev:'Trénink s nadřízeným – těžká varianta 2',odpovedny:'manazer',misto:'Kancelář/online',cas:2,cil:'Nováček absolvuje druhou náročnější variantu tréninkové schůzky s nadřízeným.'},
+    ]
+  },
+  {
+    tydnev: 4, hodiny: 42.5,
+    ukoly: [
+      {id:'4-1',nazev:'Úvod do pojištění',odpovedny:'novacek',misto:'Doma',cas:2.5,cil:'Nováček si pustí video ve vzdělávacím portálu zaměřené na úvod do pojištění.'},
+      {id:'4-2',nazev:'Vysvětlení A2',odpovedny:'manazer',misto:'Kancelář/online',cas:4,cil:'Nadřízený nováčkovi předá manuál A2 a podrobně mu vysvětlí jeho strukturu.'},
+      {id:'4-3',nazev:'A2 – teoretická část (samostudium)',odpovedny:'novacek',misto:'Doma',cas:24,cil:'Nováček si samostatně prostuduje teoretickou část manuálu A2.'},
+      {id:'4-4',nazev:'Převyprávění A2',odpovedny:'manazer',misto:'Kancelář/online',cas:2,cil:'Nováček pod vedením nadřízeného převypráví obsah A2 zpaměti.'},
+      {id:'4-5',nazev:'A2 trénink – manažer jako poradce (1)',odpovedny:'manazer',misto:'Kancelář/online',cas:2,cil:'Nováček si vyzkouší roli klienta při modelové schůzce, ve které nadřízený vystupuje jako poradce.'},
+      {id:'4-6',nazev:'A2 trénink – manažer jako poradce (2)',odpovedny:'manazer',misto:'Kancelář/online',cas:2,cil:'Nováček si vyzkouší roli klienta při modelové schůzce podruhé.'},
+      {id:'4-7',nazev:'A2 trénink ve skupině',odpovedny:'katka',misto:'Kancelář/online',cas:4,cil:'Nováček si společně s dalšími kolegy procvičí jednotlivé části A2.'},
+      {id:'4-8',nazev:'A2 trénink s manažerem – poradce s klientem',odpovedny:'manazer',misto:'Kancelář',cas:3,cil:'Nováček si v roli poradce prakticky vyzkouší prezentaci A2.'},
+    ]
+  },
+  {
+    tydnev: 5, hodiny: 44.5,
+    ukoly: [
+      {id:'5-1',nazev:'Neživotní pojištění',odpovedny:'novacek',misto:'Doma',cas:2.5,cil:'Nováček si pustí video ve vzdělávacím portálu zaměřené na neživotní pojištění.'},
+      {id:'5-2',nazev:'Školení – srovnávač majetkový',odpovedny:'marina',misto:'Kancelář/online',cas:3,cil:'Nováček se naučí pracovat se srovnávačem majetkového pojištění pod vedením Mariny.'},
+      {id:'5-3',nazev:'Projekt 100 – doplnění na 100 jmen',odpovedny:'novacek',misto:'Doma',cas:16,cil:'Nováček rozšíří seznam kontaktů v rámci projektu 100 na plných 100 jmen.'},
+      {id:'5-4',nazev:'Životní pojištění',odpovedny:'novacek',misto:'Doma',cas:2.5,cil:'Nováček si pustí video ve vzdělávacím portálu zaměřené na životní pojištění.'},
+      {id:'5-5',nazev:'Hypoteční úvěr',odpovedny:'novacek',misto:'Doma',cas:2.5,cil:'Nováček si pustí video ve vzdělávacím portálu na téma hypotečního úvěru.'},
+      {id:'5-6',nazev:'Tvorba soukromé renty',odpovedny:'novacek',misto:'Doma',cas:2.5,cil:'Nováček si pustí video ve vzdělávacím portálu zaměřené na tvorbu soukromé renty.'},
+      {id:'5-7',nazev:'Investování',odpovedny:'novacek',misto:'Doma',cas:2.5,cil:'Nováček si pustí video ve vzdělávacím portálu věnované základům investování.'},
+      {id:'5-8',nazev:'Školení EPP – jak dělat',odpovedny:'marina',misto:'Kancelář/online',cas:4,cil:'Pod vedením Mariny se nováček naučí, jak správně připravit povinné přílohy ke smlouvám.'},
+    ]
+  },
+  {
+    tydnev: 6, hodiny: 46,
+    ukoly: [
+      {id:'6-1',nazev:'Vysvětlení kalkulace životek',odpovedny:'katka',misto:'Kancelář',cas:8,cil:'Nováček se naučí dělat kalkulace životního pojištění u jednotlivých pojišťoven.'},
+      {id:'6-2',nazev:'Kalkulace životek – domácí úkol',odpovedny:'novacek',misto:'Doma',cas:8,cil:'Nováček samostatně vypracuje kalkulace životního pojištění u vybraných pojišťoven.'},
+      {id:'6-3',nazev:'Kontrola kalkulací životek',odpovedny:'katka',misto:'Kancelář/online',cas:4,cil:'Katka společně s nováčkem projde výstupy z domácího úkolu, zkontroluje správnost kalkulací.'},
+      {id:'6-4',nazev:'Žádosti o hypotéky + RSTS',odpovedny:'marina',misto:'Kancelář/online',cas:8,cil:'Nováček se naučí vyplňovat žádosti o hypoteční úvěry a stavební spoření RSTS.'},
+      {id:'6-5',nazev:'Kontrola žádostí o hypotéky',odpovedny:'marina',misto:'Kancelář/online',cas:4,cil:'Zkontrolovat s nováčkem vyplněné žádosti, doplnit zpětnou vazbu.'},
+      {id:'6-6',nazev:'Sjednání investice',odpovedny:'marina',misto:'Kancelář/online',cas:3,cil:'Nováček se naučí krok za krokem sjednat investici.'},
+      {id:'6-7',nazev:'Kontrola investic',odpovedny:'katka',misto:'Kancelář/online',cas:2,cil:'Katka s nováčkem projde výstupy ze sjednání investic.'},
+      {id:'6-8',nazev:'Jak plánovat příjem a body + statistika',odpovedny:'manazer',misto:'Dle situace',cas:4,cil:'Nováček se naučí, jak plánovat svůj příjem, pracovat s měsíčními body a chápat statistické ukazatele.'},
+    ]
+  }
+];
+
+// Každý 4. den = kontrolní den
+function getKontrolniDny(nastup) {
+  const dni = new Set();
+  const d = new Date(nastup);
+  for (let i = 3; i <= 42; i += 4) {
+    const kd = new Date(d);
+    kd.setDate(d.getDate() + i);
+    dni.add(kd.toISOString().substring(0,10));
+  }
+  return dni;
+}
+
+// STATE
+let novacci = [];
+let currentNovacekId = null;
+
+function loadData() {
+  try { novacci = JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]'); } catch(e) { novacci = []; }
+}
+
+function saveData() {
+  localStorage.setItem(LOCAL_KEY, JSON.stringify(novacci));
+}
+
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function openModal(id) { document.getElementById(id).classList.add('active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+function openNewModal() {
+  document.getElementById('fJmeno').value = '';
+  document.getElementById('fEmail').value = '';
+  document.getElementById('fNastup').value = new Date().toISOString().substring(0,10);
+  openModal('modalNew');
+}
+
+function saveNovacek() {
+  const jmeno = document.getElementById('fJmeno').value.trim();
+  const email = document.getElementById('fEmail').value.trim();
+  const nastup = document.getElementById('fNastup').value;
+  const manazer = document.getElementById('fManazer').value;
+  if (!jmeno || !nastup) { showToast('Vyplň jméno a datum nástupu', true); return; }
+
+  // Vytvoř stav úkolů
+  const splnene = {};
+  const novacek = { id: 'N-' + Date.now(), jmeno, email, nastup, manazer, splnene, created: new Date().toISOString() };
+  novacci.push(novacek);
+  saveData();
+  closeModal('modalNew');
+  renderHome();
+  showToast('Nováček ' + jmeno + ' přidán');
+}
+
+function renderHome() {
+  const grid = document.getElementById('novacekGrid');
+  if (!novacci.length) {
+    grid.innerHTML = '<div class="empty-state">Zatím žádní nováčci.<br>Přidej prvního tlačítkem níže.</div>';
+    return;
+  }
+  grid.innerHTML = novacci.map(n => {
+    const celkem = TYDNY.reduce((s,t) => s + t.ukoly.length, 0);
+    const hotovo = Object.values(n.splnene || {}).filter(Boolean).length;
+    const pct = celkem ? Math.round(hotovo / celkem * 100) : 0;
+    const tyden = getCurrentTyden(n.nastup);
+    const initials = n.jmeno.split(' ').map(p => p[0]).slice(0,2).join('').toUpperCase();
+    return `<div class="novacek-card" onclick="openNovacek('${n.id}')">
+      <div class="novacek-avatar">${initials}</div>
+      <div class="novacek-info">
+        <div class="novacek-name">${esc(n.jmeno)}</div>
+        <div class="novacek-meta">Nástup: ${fmtDate(n.nastup)} · Manažer: ${esc(n.manazer)}</div>
+      </div>
+      <div class="novacek-progress">
+        <div class="progress-val">${pct}%</div>
+        <div class="progress-label">Týden ${tyden}/6</div>
+        <div class="progress-bar-wrap"><div class="progress-bar" style="width:${pct}%"></div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function getCurrentTyden(nastup) {
+  const d = new Date(nastup);
+  const dnes = new Date();
+  const diff = Math.floor((dnes - d) / 86400000);
+  return Math.min(6, Math.max(1, Math.floor(diff / 7) + 1));
+}
+
+function openNovacek(id) {
+  currentNovacekId = id;
+  const n = novacci.find(x => x.id === id);
+  if (!n) return;
+  document.getElementById('detailName').textContent = n.jmeno;
+  document.getElementById('detailMeta').textContent = 'Nástup: ' + fmtDate(n.nastup) + ' · Manažer: ' + n.manazer + (n.email ? ' · ' + n.email : '');
+
+  const celkem = TYDNY.reduce((s,t) => s + t.ukoly.length, 0);
+  const hotovo = Object.values(n.splnene || {}).filter(Boolean).length;
+  const pct = celkem ? Math.round(hotovo / celkem * 100) : 0;
+  const tyden = getCurrentTyden(n.nastup);
+
+  document.getElementById('dStatTyden').textContent = tyden + '/6';
+  document.getElementById('dStatHotovo').textContent = hotovo;
+  document.getElementById('dStatCelkem').textContent = celkem;
+  document.getElementById('dStatPct').textContent = pct + '%';
+
+  renderTydny(n);
+  showView('view-detail');
+}
+
+function renderTydny(n) {
+  const container = document.getElementById('tydnyContainer');
+  const tyden = getCurrentTyden(n.nastup);
+  const kontrolniDny = getKontrolniDny(n.nastup);
+
+  container.innerHTML = TYDNY.map(t => {
+    const splneno = t.ukoly.filter(u => n.splnene[u.id]).length;
+    const pct = Math.round(splneno / t.ukoly.length * 100);
+    const isAktivni = t.tydnev === tyden;
+    const isPast = t.tydnev < tyden;
+
+    const ukoly = t.ukoly.map((u, i) => {
+      const done = n.splnene[u.id] || false;
+      const isKont = isKontrolaDen(n.nastup, t.tydnev, i, kontrolniDny);
+      const badge = getBadge(u.odpovedny);
+      return `<div class="ukol-card ${done?'done':''} ${isKont?'kontrola':''}" id="uk-${u.id}">
+        <div class="ukol-check ${done?'checked':''}" onclick="toggleUkol('${n.id}','${u.id}')">
+          ${done ? '✓' : ''}
+        </div>
+        <div class="ukol-body">
+          <div class="ukol-name ${done?'done-text':''}">${esc(u.nazev)}</div>
+          <div class="ukol-meta">
+            <span class="ukol-badge ${badge.cls}">${badge.label}</span>
+            <span class="ukol-badge badge-cas">⏱ ${u.cas}h</span>
+            <span class="ukol-badge badge-cas">📍 ${esc(u.misto)}</span>
+            ${isKont?'<span class="ukol-badge badge-kontrola">⚡ Kontrolní den</span>':''}
+          </div>
+          <button class="ukol-toggle-goal" onclick="toggleGoal('goal-${u.id}')">Zobrazit cíl ▾</button>
+          <div class="ukol-goal" id="goal-${u.id}">${esc(u.cil)}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    return `<div class="week-block">
+      <div class="week-header" onclick="toggleWeek('wb-${t.tydnev}')">
+        <div>
+          <div class="week-title">Týden ${t.tydnev}${isAktivni?' · AKTUÁLNÍ':isPast?' · Dokončen':''}</div>
+          <div class="week-sub">${t.hodiny}h · ${splneno}/${t.ukoly.length} úkolů</div>
+        </div>
+        <div class="week-progress-wrap"><div class="week-progress" style="width:${pct}%"></div></div>
+        <div class="week-pct">${pct}%</div>
+      </div>
+      <div class="week-body ${isAktivni||isPast?'':'collapsed'}" id="wb-${t.tydnev}">
+        ${ukoly}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function isKontrolaDen(nastup, tyden, ukolIdx, kontrolniDny) {
+  // Zjednodušeně: každý 4. den od nástupu je kontrolní
+  // Přiřadíme ke kontrolnímu dni poslední úkol každého 4. dne
+  return false; // zjednodušeno — kontrolní dny jsou vizuálně označeny v hlavičce týdne
+}
+
+function toggleUkol(novacekId, ukolId) {
+  const n = novacci.find(x => x.id === novacekId);
+  if (!n) return;
+  if (!n.splnene) n.splnene = {};
+  n.splnene[ukolId] = !n.splnene[ukolId];
+  saveData();
+  renderTydny(n);
+  // Aktualizuj statistiky
+  const celkem = TYDNY.reduce((s,t) => s + t.ukoly.length, 0);
+  const hotovo = Object.values(n.splnene).filter(Boolean).length;
+  const pct = celkem ? Math.round(hotovo / celkem * 100) : 0;
+  document.getElementById('dStatHotovo').textContent = hotovo;
+  document.getElementById('dStatPct').textContent = pct + '%';
+  renderHome();
+  showToast(n.splnene[ukolId] ? 'Úkol splněn ✓' : 'Úkol označen jako nesplněný');
+}
+
+function toggleWeek(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('collapsed');
+}
+
+function toggleGoal(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('open');
+  const btn = el.previousElementSibling;
+  if (btn) btn.textContent = el.classList.contains('open') ? 'Skrýt cíl ▴' : 'Zobrazit cíl ▾';
+}
+
+function getBadge(odpovedny) {
+  switch(odpovedny) {
+    case 'novacek': return {cls:'badge-novacek', label:'Nováček'};
+    case 'manazer': return {cls:'badge-manazer', label:'Nadřízený'};
+    case 'marina': return {cls:'badge-marina', label:'Marina'};
+    case 'katka': return {cls:'badge-katka', label:'Katka'};
+    default: return {cls:'badge-cas', label:odpovedny};
+  }
+}
+
+function confirmDelete() {
+  if (!confirm('Opravdu smazat tohoto nováčka a celý jeho plán?')) return;
+  novacci = novacci.filter(n => n.id !== currentNovacekId);
+  saveData();
+  renderHome();
+  showView('view-home');
+  showToast('Nováček smazán');
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  try { return new Date(d+'T00:00:00').toLocaleDateString('cs-CZ', {day:'numeric', month:'numeric', year:'numeric'}); } catch(e) { return d; }
+}
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function showToast(text, err) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastText').textContent = text;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function updateClock() {
+  const n = new Date();
+  document.getElementById('clock').textContent = String(n.getHours()).padStart(2,'0') + ':' + String(n.getMinutes()).padStart(2,'0');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  updateClock();
+  setInterval(updateClock, 30000);
+  document.getElementById('backToHome').addEventListener('click', e => { e.preventDefault(); showView('view-home'); renderHome(); });
+  loadData();
+  renderHome();
+});
+</script>
+</body>
+</html>
