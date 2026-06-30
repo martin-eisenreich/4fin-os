@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>4fin | Kontrola úkolů</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  :root {
+    --bg:#0d0f14; --surface:#151820; --surface2:#1c2030; --border:#252a3a;
+    --accent:#c8a96e; --accent2:#e8c98e; --green:#4caf82; --red:#e05252;
+    --yellow:#e0a832; --blue:#5b8dee; --text:#e8eaf0; --text2:#8892a4; --text3:#555f72;
+    --radius:10px; --mono:'JetBrains Mono',monospace; --sans:'Inter',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5;}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+  .logo{font-family:var(--mono);font-size:13px;color:var(--accent);letter-spacing:0.08em;font-weight:500;}
+  .logo span{color:var(--text3);}
+  .back-btn{font-size:13px;color:var(--text2);text-decoration:none;}
+  #clock{font-family:var(--mono);font-size:12px;color:var(--text3);}
+  .shell{max-width:720px;margin:0 auto;padding:28px 20px 80px;}
+
+  .sync-bar{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text3);margin-bottom:20px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;}
+  .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--text3);flex-shrink:0;}
+  .sync-dot.synced{background:var(--green);}
+  .sync-dot.syncing{background:var(--yellow);animation:blink 0.8s infinite;}
+  .sync-dot.error{background:var(--red);}
+  @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+  .page-title{font-size:22px;font-weight:700;margin-bottom:4px;}
+  .page-sub{font-size:13px;color:var(--text2);margin-bottom:24px;}
+
+  /* STATS */
+  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px;}
+  .stat-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;}
+  .stat-val{font-size:24px;font-weight:700;font-family:var(--mono);color:var(--accent);}
+  .stat-label{font-size:11px;color:var(--text3);margin-top:3px;}
+
+  /* FILTRY */
+  .filters{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+  .filter-btn{padding:6px 14px;border-radius:99px;font-size:12px;font-weight:500;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;transition:all 0.15s;}
+  .filter-btn.active{background:var(--accent);color:#0d0f14;border-color:var(--accent);}
+
+  /* SEKCE */
+  .section-title{font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);margin:24px 0 14px;display:flex;align-items:center;gap:10px;}
+  .section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+
+  /* OSOBA KARTA */
+  .person-section{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);margin-bottom:16px;overflow:hidden;}
+  .person-header{padding:16px 20px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:background 0.15s;}
+  .person-header:hover{background:var(--surface2);}
+  .person-avatar{width:40px;height:40px;border-radius:50%;background:rgba(200,169,110,0.15);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--accent);flex-shrink:0;font-family:var(--mono);}
+  .person-info{flex:1;}
+  .person-name{font-size:15px;font-weight:700;color:var(--text);}
+  .person-role{font-size:11px;color:var(--text3);margin-top:2px;}
+  .person-stats{display:flex;gap:12px;align-items:center;}
+  .person-stat{text-align:center;}
+  .person-stat-val{font-size:16px;font-weight:700;font-family:var(--mono);}
+  .person-stat-val.open{color:var(--yellow);}
+  .person-stat-val.done{color:var(--green);}
+  .person-stat-label{font-size:10px;color:var(--text3);}
+  .person-chevron{color:var(--text3);font-size:16px;transition:transform 0.2s;flex-shrink:0;}
+  .person-chevron.open{transform:rotate(180deg);}
+
+  .person-body{display:none;border-top:1px solid var(--border);}
+  .person-body.open{display:block;}
+
+  /* ÚKOLY */
+  .ukoly-group{padding:14px 20px;border-bottom:1px solid var(--border);}
+  .ukoly-group:last-child{border-bottom:none;}
+  .ukoly-group-title{font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+
+  .ukol-row{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid rgba(37,42,58,0.5);}
+  .ukol-row:last-child{border-bottom:none;}
+  .ukol-check{width:20px;height:20px;border-radius:6px;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;margin-top:1px;}
+  .ukol-check.checked{background:var(--green);border-color:var(--green);}
+  .ukol-check.checked::after{content:'✓';color:#0d0f14;font-size:11px;font-weight:700;}
+  .ukol-content{flex:1;}
+  .ukol-text{font-size:13px;color:var(--text);line-height:1.4;}
+  .ukol-text.done{text-decoration:line-through;color:var(--text3);}
+  .ukol-meta{display:flex;gap:8px;margin-top:5px;flex-wrap:wrap;align-items:center;}
+  .ukol-tag{font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;font-family:var(--mono);}
+  .tag-sys{background:rgba(91,141,238,0.15);color:var(--blue);}
+  .tag-rozv{background:rgba(76,175,130,0.15);color:var(--green);}
+  .tag-martin{background:rgba(200,169,110,0.15);color:var(--accent);}
+  .tag-consult{background:rgba(76,175,130,0.12);color:var(--green);}
+  .tag-oba{background:rgba(155,93,238,0.15);color:#9b5dee;}
+  .ukol-deadline{font-size:11px;color:var(--text3);font-family:var(--mono);}
+  .ukol-deadline.overdue{color:var(--red);}
+
+  /* PLNĚNÍ */
+  .plneni-wrap{display:flex;align-items:center;gap:6px;margin-top:6px;}
+  .plneni-bar{width:80px;height:4px;background:var(--border);border-radius:99px;overflow:hidden;}
+  .plneni-fill{height:100%;background:var(--accent);border-radius:99px;transition:width 0.3s;}
+  .plneni-input{width:44px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:11px;font-family:var(--mono);padding:2px 5px;outline:none;text-align:right;}
+  .plneni-input:focus{border-color:var(--accent);}
+  .plneni-pct{font-size:11px;color:var(--text3);}
+
+  .ukol-comment{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-family:var(--sans);font-size:12px;padding:6px 10px;outline:none;margin-top:6px;resize:none;}
+  .ukol-comment:focus{border-color:var(--accent);}
+
+  /* ODESLAT / FOOTER */
+  .person-footer{padding:14px 20px;background:var(--surface2);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+  .footer-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .btn-send{background:var(--accent);color:#0d0f14;border:none;border-radius:8px;font-family:var(--sans);font-size:13px;font-weight:700;padding:10px 18px;cursor:pointer;transition:background 0.15s;display:flex;align-items:center;gap:6px;}
+  .btn-send:hover{background:var(--accent2);}
+  .btn-send:disabled{opacity:0.5;cursor:not-allowed;}
+  .btn-add-ukol-m2{background:none;border:1.5px dashed var(--border);border-radius:8px;color:var(--text2);font-family:var(--sans);font-size:13px;font-weight:600;padding:10px 16px;cursor:pointer;transition:all 0.15s;}
+  .btn-add-ukol-m2:hover{border-color:var(--accent);color:var(--accent);}
+  .send-status{font-size:12px;color:var(--text3);}
+
+  /* GLOBAL SEND */
+  .global-send{background:var(--surface);border:1.5px solid var(--accent);border-radius:var(--radius);padding:16px 20px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  .global-send-info{font-size:13px;color:var(--text2);}
+  .global-send-info strong{color:var(--accent);}
+  .btn-global{background:var(--accent);color:#0d0f14;border:none;border-radius:8px;font-family:var(--sans);font-size:14px;font-weight:700;padding:11px 20px;cursor:pointer;white-space:nowrap;}
+
+  .empty{text-align:center;padding:32px 20px;color:var(--text3);}
+  .empty-icon{font-size:36px;margin-bottom:10px;}
+  .no-tasks{font-size:13px;color:var(--text3);padding:12px 0;font-style:italic;}
+
+  /* MODAL (mobil-first, vyjíždí zespodu) */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity 0.2s;}
+  .modal-overlay.open{opacity:1;pointer-events:all;}
+  .modal{background:var(--surface);border-radius:20px 20px 0 0;padding:20px 20px 44px;width:100%;max-width:680px;margin:0 auto;transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);max-height:92vh;overflow-y:auto;}
+  .modal-overlay.open .modal{transform:translateY(0);}
+  .modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px;}
+  .modal-title{font-size:18px;font-weight:700;color:var(--text);margin-bottom:4px;}
+  .modal-sub{font-size:13px;color:var(--text3);margin-bottom:20px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:11px;font-weight:600;color:var(--text2);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:7px;}
+  .field textarea,.field input,.field select{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--sans);font-size:14px;padding:10px 12px;outline:none;transition:border-color 0.15s;}
+  .field textarea:focus,.field input:focus,.field select:focus{border-color:var(--accent);}
+  .field textarea{resize:vertical;min-height:70px;}
+  .btn-save{width:100%;background:var(--accent);color:#0d0f14;border:none;border-radius:10px;font-family:var(--sans);font-size:15px;font-weight:700;padding:14px;cursor:pointer;margin-top:10px;}
+  .btn-save:hover{background:var(--accent2);}
+  .btn-save:disabled{opacity:0.5;cursor:not-allowed;}
+
+  @media(max-width:500px){.stats-row{grid-template-columns:1fr 1fr;}.person-stats{display:none;}.global-send{flex-direction:column;align-items:flex-start;}.btn-global{width:100%;}}
+</style>
+</head>
+<body>
+<header>
+  <a class="back-btn" href="index.html">‹ 4fin OS</a>
+  <div class="logo">4fin <span>//</span> Kontrola úkolů</div>
+  <div id="clock"></div>
+</header>
+
+<div class="shell">
+  <div class="sync-bar">
+    <div class="sync-dot synced" id="sync-dot"></div>
+    <span id="sync-status">Načítám úkoly...</span>
+  </div>
+
+  <div class="page-title">Modul 2 — Kontrola úkolů</div>
+  <div class="page-sub">Přehled všech úkolů ze systémových i rozvojových konzultací</div>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-box"><div class="stat-val" id="stat-open">—</div><div class="stat-label">Otevřených úkolů</div></div>
+    <div class="stat-box"><div class="stat-val" id="stat-done">—</div><div class="stat-label">Splněných</div></div>
+    <div class="stat-box"><div class="stat-val" id="stat-overdue">—</div><div class="stat-label">Po termínu</div></div>
+    <div class="stat-box"><div class="stat-val" id="stat-pct">—</div><div class="stat-label">Plnění celkem</div></div>
+  </div>
+
+  <!-- GLOBAL SEND -->
+  <div class="global-send">
+    <div class="global-send-info">Odeslat přehled úkolů <strong>všem konzultantům</strong> najednou</div>
+    <button class="btn-global" onclick="sendAll()">📧 Odeslat všem</button>
+  </div>
+
+  <!-- FILTRY -->
+  <div class="filters">
+    <button class="filter-btn active" onclick="setFilter('all',this)">Vše</button>
+    <button class="filter-btn" onclick="setFilter('open',this)">⏳ Otevřené</button>
+    <button class="filter-btn" onclick="setFilter('overdue',this)">⚠️ Po termínu</button>
+    <button class="filter-btn" onclick="setFilter('done',this)">✅ Splněné</button>
+  </div>
+
+  <div class="section-title">Konzultanti & úkoly</div>
+  <div id="personList"></div>
+</div>
+
+<!-- ── MODAL: RUČNĚ PŘIDAT ÚKOL ── -->
+<div class="modal-overlay" id="addUkolModal" onclick="closeOnOverlay(event,'addUkolModal')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">➕ Přidat úkol</div>
+    <div class="modal-sub" id="addUkolSub"></div>
+    <div class="field">
+      <label>Popis úkolu</label>
+      <textarea id="au-text" rows="3" placeholder="Co konkrétně udělá?"></textarea>
+    </div>
+    <div class="field">
+      <label>Zodpovídá</label>
+      <select id="au-owner">
+        <option value="martin">👤 Martin (já)</option>
+        <option value="consult" selected>👤 Poradce</option>
+        <option value="oba">👥 Oba</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Typ konzultace</label>
+      <select id="au-type">
+        <option value="sys" selected>📊 Systémová</option>
+        <option value="rozv">🌱 Rozvojová</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Termín splnění</label>
+      <input type="date" id="au-deadline">
+    </div>
+    <button class="btn-save" id="au-save-btn" onclick="saveManualUkol()">✅ Přidat úkol</button>
+  </div>
+</div>
+
+<script>
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbyqnJsAlmzOAntypivM5oiLt8twpNJkJrUaK4D-rkvQPzFC_btwUrC8ivasYrnWbdsM6g/exec';
+const MARTIN_EMAIL='martin.eisenreich@4fin.cz';
+
+const PEOPLE=[
+  {id:'truhlar',     name:'Truhlář, Luboš',    short:'Truhlář',    role:'Oblastní ředitel',  email:'lubos.truhlar@4fin.cz'},
+  {id:'bugaeva',     name:'Bugaeva, Marina',   short:'Bugaeva',    role:'TOP konzultant II', email:'marina.bugaeva@4fin.cz'},
+  {id:'honcharenko', name:'Honcharenko, Olha', short:'Honcharenko',role:'Manažer',           email:'olha.honcharenko@4fin.cz'},
+  {id:'kruts',       name:'Kruts, Nataliia',   short:'Kruts',      role:'Manažer',           email:'natalia.kruts@4fin.cz'},
+  {id:'moravcova',   name:'Moravcová, Tereza', short:'Moravcová',  role:'Konzultant',        email:'tereza.moravcova@4fin.cz'},
+  {id:'zavrel',      name:'Zavřel, Radek',     short:'Zavřel',     role:'Senior konzultant', email:'radek.zavrel@4fin.cz'},
+  {id:'ershova',     name:'Ershova, Katka',    short:'Ershova',    role:'Asistentka',        email:'ekaterina.ershova@4fin.cz'},
+  {id:'manoilo',    name:'Manoilo, Oksana',   short:'Manoilo',    role:'Poradkyně',         email:'oksana.manoilova@4fin.cz'},
+];
+
+let currentFilter='all';
+let ukoly={}; // {personId: [{text, owner, deadline, done, plneni, type, source, comment}]}
+let addUkolPersonId=null;
+
+function pad(n){return String(n).padStart(2,'0');}
+function updateClock(){const now=new Date();document.getElementById('clock').textContent=pad(now.getHours())+':'+pad(now.getMinutes());}
+updateClock();setInterval(updateClock,30000);
+function setSyncStatus(s,t){document.getElementById('sync-dot').className='sync-dot '+s;document.getElementById('sync-status').textContent=t;}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  await loadUkoly();
+  render();
+  const def=new Date();def.setDate(def.getDate()+7);
+  document.getElementById('au-deadline').value=def.toISOString().split('T')[0];
+});
+
+// ── NAČTENÍ ÚKOLŮ ZE VŠECH ZDROJŮ ──
+async function loadUkoly(){
+  ukoly={};
+  PEOPLE.forEach(p=>{ ukoly[p.id]=[]; });
+
+  setSyncStatus('syncing','Načítám úkoly z Google Sheets...');
+
+  // Úkoly ze systémové konzultace (Modul 1) i ručně přidané — z Google Sheets
+  try{
+    const res = await fetch(SCRIPT_URL+'?action=get_ukoly');
+    const sheetUkoly = await res.json();
+    sheetUkoly.forEach(u=>{
+      if(!ukoly[u.personId]) return; // neznama osoba, preskoc
+      ukoly[u.personId].push({
+        id:u.id,
+        text:u.desc,
+        owner:u.owner,
+        deadline:u.deadline||'',
+        done:u.done||false,
+        plneni:u.plneni||0,
+        type:u.type||'sys',
+        comment:u.comment||'',
+        source:u.source||''
+      });
+    });
+    setSyncStatus('synced','Načteno · '+new Date().toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'}));
+  }catch(e){
+    console.log('Chyba nacitani ukolu ze Sheets:', e);
+    setSyncStatus('error','Chyba načítání ze Sheets');
+  }
+
+  // Z rozvojové konzultace (Modul 3) — zatim stale z localStorage,
+  // dokud nebude Modul 3 take prepojen na Sheets
+  PEOPLE.forEach(p=>{
+    try{
+      const rozvData=JSON.parse(localStorage.getItem('4fin_rozv2')||'{}');
+      const personRozv=rozvData[p.id];
+      if(personRozv&&personRozv.temata){
+        personRozv.temata.forEach(tema=>{
+          if(tema.status==='completed')return;
+          (tema.ukoly||[]).forEach((u,ui)=>{
+            if(!u.done){
+              ukoly[p.id].push({
+                id:p.id+'_rozv_'+tema.id+'_'+ui,
+                text:u.text,
+                owner:u.owner||'consult',
+                deadline:u.deadline||'',
+                done:u.done||false,
+                plneni:u.plneni||0,
+                type:'rozv',comment:'',
+                source:'Rozvojová: '+tema.name
+              });
+            }
+          });
+        });
+      }
+    }catch(e){}
+  });
+
+  // Načti uložené lokální stavy jen pro rozvojové úkoly (sys uz ma stav primo ze Sheets)
+  try{
+    const saved=JSON.parse(localStorage.getItem('4fin_m2_states')||'{}');
+    PEOPLE.forEach(p=>{
+      ukoly[p.id].forEach(u=>{
+        if(u.type==='rozv' && saved[u.id]){
+          u.done=saved[u.id].done||false;
+          u.plneni=saved[u.id].plneni||0;
+          u.comment=saved[u.id].comment||'';
+        }
+      });
+    });
+  }catch(e){}
+
+  updateStats();
+}
+
+function saveStates(){
+  const states={};
+  PEOPLE.forEach(p=>{
+    ukoly[p.id].forEach(u=>{
+      if(u.type==='rozv'){
+        states[u.id]={done:u.done,plneni:u.plneni,comment:u.comment};
+      }
+    });
+  });
+  localStorage.setItem('4fin_m2_states',JSON.stringify(states));
+}
+
+function updateStats(){
+  const all=PEOPLE.flatMap(p=>ukoly[p.id]||[]);
+  const open=all.filter(u=>!u.done);
+  const done=all.filter(u=>u.done);
+  const today=new Date();
+  const overdue=open.filter(u=>u.deadline&&new Date(u.deadline)<today);
+  const avgPlneni=all.length?Math.round(all.reduce((s,u)=>s+(u.plneni||0),0)/all.length):0;
+  document.getElementById('stat-open').textContent=open.length;
+  document.getElementById('stat-done').textContent=done.length;
+  document.getElementById('stat-overdue').textContent=overdue.length;
+  document.getElementById('stat-pct').textContent=avgPlneni+'%';
+}
+
+// ── FILTER ──
+function setFilter(f,el){
+  currentFilter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+// ── RENDER ──
+function render(){
+  const list=document.getElementById('personList');
+  const today=new Date();
+  let html='';
+
+  PEOPLE.forEach(p=>{
+    let pUkoly=ukoly[p.id]||[];
+    if(currentFilter==='open') pUkoly=pUkoly.filter(u=>!u.done);
+    if(currentFilter==='done') pUkoly=pUkoly.filter(u=>u.done);
+    if(currentFilter==='overdue') pUkoly=pUkoly.filter(u=>!u.done&&u.deadline&&new Date(u.deadline)<today);
+
+    const allP=ukoly[p.id]||[];
+    const openCount=allP.filter(u=>!u.done).length;
+    const doneCount=allP.filter(u=>u.done).length;
+    const initials=p.name.split(',').map(s=>s.trim()[0]).join('');
+
+    const sysUkoly=pUkoly.filter(u=>u.type==='sys');
+    const rozvUkoly=pUkoly.filter(u=>u.type==='rozv');
+
+    // Osobu vždy zobrazíme (i bez úkolů), aby šlo úkol přidat i tomu, kdo zatím žádný nemá
+    html+=`<div class="person-section">
+      <div class="person-header" onclick="togglePerson('pb-${p.id}','pc-${p.id}')">
+        <div class="person-avatar">${initials}</div>
+        <div class="person-info">
+          <div class="person-name">${p.name}</div>
+          <div class="person-role">${p.role}</div>
+        </div>
+        <div class="person-stats">
+          <div class="person-stat"><div class="person-stat-val open">${openCount}</div><div class="person-stat-label">Otevřené</div></div>
+          <div class="person-stat"><div class="person-stat-val done">${doneCount}</div><div class="person-stat-label">Splněné</div></div>
+        </div>
+        <div class="person-chevron" id="pc-${p.id}">▾</div>
+      </div>
+      <div class="person-body" id="pb-${p.id}">
+        ${sysUkoly.length?`
+        <div class="ukoly-group">
+          <div class="ukoly-group-title"><span style="color:var(--blue);">📊</span> Systémová konzultace</div>
+          ${sysUkoly.map(u=>renderUkol(u,p.id)).join('')}
+        </div>`:''}
+        ${rozvUkoly.length?`
+        <div class="ukoly-group">
+          <div class="ukoly-group-title"><span style="color:var(--green);">🌱</span> Rozvojová konzultace</div>
+          ${rozvUkoly.map(u=>renderUkol(u,p.id)).join('')}
+        </div>`:''}
+        ${!pUkoly.length?`<div class="ukoly-group"><div class="no-tasks">Žádné úkoly k zobrazení.</div></div>`:''}
+        <div class="person-footer">
+          <div class="footer-left">
+            <button class="btn-add-ukol-m2" onclick="openAddUkol('${p.id}')">➕ Přidat úkol</button>
+            <div class="send-status" id="ss-${p.id}"></div>
+          </div>
+          <button class="btn-send" onclick="sendPerson('${p.id}')">📧 Odeslat přehled — ${p.short}</button>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  list.innerHTML=html;
+}
+
+function renderUkol(u,personId){
+  const today=new Date();
+  const isOverdue=u.deadline&&!u.done&&new Date(u.deadline)<today;
+  const dl=u.deadline?new Date(u.deadline).toLocaleDateString('cs-CZ',{day:'numeric',month:'numeric',year:'numeric'}):'';
+  const ownerLabel=u.owner==='martin'?'Martin':u.owner==='oba'?'Oba':'Poradce';
+  const ownerCls=u.owner==='martin'?'tag-martin':u.owner==='oba'?'tag-oba':'tag-consult';
+  const typeCls=u.type==='sys'?'tag-sys':'tag-rozv';
+  const src=u.source||'';
+  return `<div class="ukol-row">
+    <div class="ukol-check ${u.done?'checked':''}" onclick="toggleUkol('${u.id}','${personId}')"></div>
+    <div class="ukol-content">
+      <div class="ukol-text ${u.done?'done':''}">${esc(u.text)}</div>
+      <div class="ukol-meta">
+        <span class="ukol-tag ${typeCls}">${u.type==='sys'?'Systémová':'Rozvojová'}</span>
+        <span class="ukol-tag ${ownerCls}">${ownerLabel}</span>
+        ${dl?`<span class="ukol-deadline ${isOverdue?'overdue':''}">${dl}${isOverdue?' (po termínu)':''}</span>`:''}
+        ${src?`<span style="font-size:11px;color:var(--text3);">${esc(src)}</span>`:''}
+      </div>
+      <div class="plneni-wrap">
+        <span style="font-size:11px;color:var(--text3);">Plnění:</span>
+        <div class="plneni-bar"><div class="plneni-fill" id="pf-${u.id}" style="width:${u.plneni||0}%"></div></div>
+        <input class="plneni-input" type="number" min="0" max="100" value="${u.plneni||0}" onchange="setPlneni('${u.id}','${personId}',this.value)">
+        <span class="plneni-pct">%</span>
+      </div>
+      <textarea class="ukol-comment" rows="1" placeholder="Komentář..." onchange="setComment('${u.id}','${personId}',this.value)">${esc(u.comment||'')}</textarea>
+    </div>
+  </div>`;
+}
+
+function togglePerson(bodyId,chevId){
+  document.getElementById(bodyId)?.classList.toggle('open');
+  document.getElementById(chevId)?.classList.toggle('open');
+}
+
+function toggleUkol(uid,personId){
+  const u=findUkol(uid,personId);
+  if(!u)return;
+  u.done=!u.done;
+  if(u.done)u.plneni=100;
+  persistUkolStav(u);
+  updateStats();render();
+  // Re-open
+  setTimeout(()=>document.getElementById('pb-'+personId)?.classList.add('open'),50);
+}
+
+function setPlneni(uid,personId,val){
+  const u=findUkol(uid,personId);
+  if(!u)return;
+  u.plneni=Math.min(100,Math.max(0,+val||0));
+  if(u.plneni===100)u.done=true;
+  const fill=document.getElementById('pf-'+uid);
+  if(fill)fill.style.width=u.plneni+'%';
+  persistUkolStav(u);
+  updateStats();
+}
+
+function setComment(uid,personId,val){
+  const u=findUkol(uid,personId);
+  if(!u)return;
+  u.comment=val;
+  persistUkolStav(u);
+}
+
+// Ulozi stav (done/plneni/comment) bud do Sheets (sys ukoly i rucne pridane) nebo do localStorage (rozv z Modulu 3, docasne)
+async function persistUkolStav(u){
+  if(u.type==='sys'||u.source==='Ručně přidáno (Modul 2)'){
+    try{
+      const payload={ukolId:u.id,done:u.done,plneni:u.plneni,comment:u.comment};
+      await fetch(SCRIPT_URL+'?action=update_ukol_stav&data='+encodeURIComponent(JSON.stringify(payload)));
+    }catch(e){
+      console.log('Chyba ukladani stavu ukolu do Sheets:', e);
+    }
+  } else {
+    saveStates();
+  }
+}
+
+function findUkol(uid,personId){
+  return (ukoly[personId]||[]).find(u=>u.id===uid);
+}
+
+// ── RUČNÍ PŘIDÁNÍ ÚKOLU ──
+function openAddUkol(personId){
+  addUkolPersonId=personId;
+  const p=PEOPLE.find(x=>x.id===personId);
+  document.getElementById('addUkolSub').textContent=p?p.name:'';
+  document.getElementById('au-text').value='';
+  document.getElementById('au-owner').value='consult';
+  document.getElementById('au-type').value='sys';
+  const def=new Date();def.setDate(def.getDate()+7);
+  document.getElementById('au-deadline').value=def.toISOString().split('T')[0];
+  document.getElementById('addUkolModal').classList.add('open');
+  setTimeout(()=>document.getElementById('au-text').focus(),350);
+}
+
+async function saveManualUkol(){
+  const text=document.getElementById('au-text').value.trim();
+  if(!text){alert('Zadej popis úkolu!');return;}
+  const personId=addUkolPersonId;
+  const p=PEOPLE.find(x=>x.id===personId);
+  const owner=document.getElementById('au-owner').value;
+  const type=document.getElementById('au-type').value;
+  const deadline=document.getElementById('au-deadline').value;
+
+  const btn=document.getElementById('au-save-btn');
+  btn.disabled=true; btn.textContent='Ukládám...';
+
+  try{
+    const payload={
+      personId, desc:text, owner,
+      ownerName: owner==='martin'?'Martin':(p?p.short:''),
+      deadline, priority:'medium', type,
+      zdroj:'Ručně přidáno (Modul 2)'
+    };
+    const res=await fetch(SCRIPT_URL+'?action=add_ukol&data='+encodeURIComponent(JSON.stringify(payload)));
+    const result=await res.json();
+    if(result.status==='ok'){
+      document.getElementById('addUkolModal').classList.remove('open');
+      await loadUkoly();
+      render();
+      setTimeout(()=>document.getElementById('pb-'+personId)?.classList.add('open'),100);
+    }else{
+      alert('⚠️ Úkol se nepodařilo uložit: '+(result.message||'neznámá chyba'));
+    }
+  }catch(e){
+    alert('⚠️ Chyba ukládání: '+e.message);
+  }
+  btn.disabled=false; btn.textContent='✅ Přidat úkol';
+}
+
+function closeOnOverlay(e,id){if(e.target.classList.contains('modal-overlay'))document.getElementById(id).classList.remove('open');}
+
+// ── ODESLÁNÍ ──
+async function sendPerson(personId){
+  const p=PEOPLE.find(x=>x.id===personId);
+  if(!p)return;
+  const btn=document.querySelector(`#pb-${personId} .btn-send`);
+  const status=document.getElementById('ss-'+personId);
+  if(btn)btn.disabled=true;
+  if(status)status.textContent='Odesílám...';
+  setSyncStatus('syncing','Odesílám...');
+
+  const pUkoly=ukoly[personId]||[];
+  const html=buildEmailHtml(p,pUkoly);
+  const subject='Přehled úkolů — '+p.name+' — '+new Date().toLocaleDateString('cs-CZ');
+
+  try{
+    const payload={
+      personId,personName:p.name,email:p.email,
+      subject,htmlBody:html,
+      cc:MARTIN_EMAIL
+    };
+    await fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain'},
+      body: JSON.stringify({action: 'send_prehled', data: payload})
+    });
+    if(status)status.textContent='✅ Odesláno '+new Date().toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'});
+    setSyncStatus('synced','Odesláno ✓');
+  }catch(e){
+    if(status)status.textContent='❌ Chyba odesílání';
+    setSyncStatus('error','Chyba');
+  }
+  if(btn)btn.disabled=false;
+}
+
+async function sendAll(){
+  setSyncStatus('syncing','Odesílám všem...');
+  for(const p of PEOPLE){
+    await sendPerson(p.id);
+    await new Promise(r=>setTimeout(r,500));
+  }
+  setSyncStatus('synced','Odesláno všem ✓');
+  alert('✅ Přehled odeslán všem konzultantům!');
+}
+
+function buildEmailHtml(p,pUkoly){
+  const today=new Date();
+  const openU=pUkoly.filter(u=>!u.done&&u.type!=='ceka');
+  const cekaU=pUkoly.filter(u=>u.type==='ceka'||u.plneni===99);
+  const doneU=pUkoly.filter(u=>u.done);
+  const BASE_URL='https://script.google.com/macros/s/AKfycbyqnJsAlmzOAntypivM5oiLt8twpNJkJrUaK4D-rkvQPzFC_btwUrC8ivasYrnWbdsM6g/exec';
+
+  const ukolHtml=(list,title,color,showBtn)=>{
+    if(!list.length)return'';
+    return`<div style="margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:700;color:${color};letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">${title}</div>
+      ${list.map(u=>{
+        const dl=u.deadline?new Date(u.deadline).toLocaleDateString('cs-CZ',{day:'numeric',month:'numeric',year:'numeric'}):'';
+        const isOverdue=u.deadline&&!u.done&&new Date(u.deadline)<today;
+        const typLabel=u.type==='sys'?'Systémová':(u.source||'Rozvojová');
+        const splnitUrl=BASE_URL+'?action=ukol_splnit&id='+encodeURIComponent(u.id)+'&person='+encodeURIComponent(p.id);
+        return`<div style="background:#1c2030;border-radius:8px;padding:14px 16px;margin-bottom:10px;${u.done?'opacity:0.6;':isOverdue?'border-left:3px solid #e05252;':'border-left:3px solid #252a3a;'}">
+          <div style="font-size:13px;color:${u.done?'#555f72':'#e8eaf0'};${u.done?'text-decoration:line-through;':''}margin-bottom:8px;">${u.text}</div>
+          <div style="font-size:11px;color:#8892a4;line-height:1.8;">
+            <div>Typ konzultace: <span style="color:#c8a96e;">${typLabel}</span></div>
+            ${dl?`<div>Termín: <span style="color:${isOverdue?'#e05252':'#8892a4'};">${dl}${isOverdue?' — PO TERMÍNU':''}</span></div>`:''}
+            <div>Plnění: <span style="color:#c8a96e;">${u.plneni||0}%</span></div>
+          </div>
+          ${u.comment?`<div style="font-size:12px;color:#8892a4;margin-top:8px;font-style:italic;border-top:1px solid #252a3a;padding-top:8px;">${u.comment}</div>`:''}
+          ${showBtn&&u.id?`<div style="margin-top:10px;">
+            <a href="${splnitUrl}" style="display:inline-block;background:#c8a96e;color:#0d0f14;font-size:12px;font-weight:700;padding:7px 16px;border-radius:6px;text-decoration:none;">✓ Označit jako splněné</a>
+          </div>`:''}
+        </div>`;
+      }).join('')}
+    </div>`;
+  };
+
+  return`<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f5f5f5;font-family:Arial,sans-serif;">
+<div style="max-width:600px;margin:20px auto;background:#0d0f14;border-radius:12px;overflow:hidden;">
+  <div style="background:#151820;border-bottom:2px solid #c8a96e;padding:24px 28px;">
+    <div style="font-size:10px;font-weight:700;color:#c8a96e;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">4fin Better Together</div>
+    <div style="font-size:20px;font-weight:700;color:#e8eaf0;margin-bottom:4px;">Přehled úkolů</div>
+    <div style="font-size:13px;color:#8892a4;">${p.name} · ${new Date().toLocaleDateString('cs-CZ',{day:'numeric',month:'long',year:'numeric'})}</div>
+  </div>
+  <div style="padding:24px 28px;">
+    <div style="background:#1c2030;border-radius:8px;padding:12px 16px;margin-bottom:20px;display:flex;gap:20px;">
+      <div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:#e0a832;font-family:monospace;">${openU.length}</div><div style="font-size:11px;color:#555f72;">Otevřených</div></div>
+      <div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:#5b8dee;font-family:monospace;">${cekaU.length}</div><div style="font-size:11px;color:#555f72;">Čeká na kontrolu</div></div>
+      <div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:#4caf82;font-family:monospace;">${doneU.length}</div><div style="font-size:11px;color:#555f72;">Splněných</div></div>
+    </div>
+    <div style="background:#1c2030;border-radius:8px;padding:10px 14px;margin-bottom:20px;font-size:12px;color:#8892a4;">
+      Klikni na tlačítko u úkolu pro označení jako splněné. Martin následně potvrdí dokončení.
+    </div>
+    ${ukolHtml(openU,'Otevřené úkoly','#e0a832',true)}
+    ${ukolHtml(cekaU,'Čeká na kontrolu','#5b8dee',false)}
+    ${ukolHtml(doneU,'Splněné úkoly','#4caf82',false)}
+  </div>
+  <div style="border-top:1px solid #252a3a;padding:20px 28px;font-size:13px;color:#8892a4;line-height:1.6;">
+    <div style="font-weight:700;color:#c8a96e;font-size:14px;">Martin Eisenreich</div>
+    <div>Regionální ředitel | 4fin Better Together</div>
+    <div style="margin-top:4px;">+420 725 256 506 · martin.eisenreich@4fin.cz</div>
+  </div>
+</div></body></html>`;
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
+</script>
+</body>
+</html>
