@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="4fin Nábor">
+<title>4fin OS | Náborová evidence</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg:        #0d0f14;
+    --surface:   #151820;
+    --surface2:  #1c2030;
+    --surface3:  #232838;
+    --border:    #252a3a;
+    --accent:    #c8a96e;
+    --accent2:   #e8c98e;
+    --green:     #4caf82;
+    --red:       #e05252;
+    --blue:      #5b8dee;
+    --text:      #e8eaf0;
+    --text2:     #8892a4;
+    --text3:     #555f72;
+    --radius:    10px;
+    --mono:      'JetBrains Mono', monospace;
+    --sans:      'Inter', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+    padding-bottom: 60px;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 20px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    font-weight: 500;
+    text-decoration: none;
+  }
+  .logo span { color: var(--text3); }
+  .back-link {
+    font-size: 12px;
+    color: var(--text2);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .back-link:active { color: var(--accent); }
+
+  .shell {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 24px 16px 80px;
+  }
+
+  .page-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .page-sub {
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 28px;
+  }
+
+  /* ── VIEW SWITCHING ── */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ── MANAGER GRID (home view) ── */
+  .manager-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .manager-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 16px;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.1s;
+    text-align: left;
+  }
+  .manager-card:active { transform: scale(0.98); border-color: var(--accent); }
+  .manager-initials {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 500;
+    margin-bottom: 12px;
+  }
+  .manager-name {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .manager-count {
+    font-size: 12px;
+    color: var(--text2);
+    font-family: var(--mono);
+  }
+  .manager-count strong { color: var(--accent2); font-weight: 600; }
+
+  /* ── CANDIDATE LIST (manager view) ── */
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .candidate-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+  .candidate-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: border-color 0.15s;
+  }
+  .candidate-card:active { border-color: var(--accent); }
+  .candidate-info { flex: 1; min-width: 0; }
+  .candidate-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .candidate-meta { font-size: 12px; color: var(--text2); }
+  .candidate-meta span { color: var(--text3); margin: 0 4px; }
+  .candidate-next {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text2);
+    text-align: right;
+    flex-shrink: 0;
+    margin-left: 12px;
+    white-space: nowrap;
+  }
+  .candidate-next.upcoming { color: var(--green); }
+  .candidate-last {
+    text-align: right;
+    flex-shrink: 0;
+    margin-left: 12px;
+    white-space: nowrap;
+  }
+  .candidate-last-date {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .candidate-last-date.stale { color: var(--red); }
+  .candidate-last-date.warn { color: var(--accent2); }
+  .candidate-last-label {
+    font-size: 9px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 2px;
+  }
+  .candidate-cols {
+    display: flex;
+    gap: 18px;
+    flex-shrink: 0;
+    margin-left: 12px;
+  }
+  .candidate-col-label {
+    font-size: 9px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 3px;
+    text-align: right;
+  }
+  .candidate-col-value {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: right;
+    white-space: nowrap;
+  }
+  .candidate-col-value.empty { color: var(--text3); font-weight: 400; }
+  .candidate-col-value.next { color: var(--green); }
+  .candidate-col-value.stale-text { color: var(--red); }
+  .candidate-col-value.warn-text { color: var(--accent2); }
+  .candidate-arrow { color: var(--text3); margin-left: 8px; flex-shrink: 0; }
+  .pdf-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    border-radius: 6px;
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-left: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .pdf-btn:active { border-color: var(--accent); color: var(--accent); }
+
+  .empty-state {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--text3);
+    font-size: 13px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 8px;
+    padding: 13px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: var(--sans);
+    cursor: pointer;
+    width: 100%;
+  }
+  .btn:active { background: var(--accent2); }
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:active { border-color: var(--accent); background: var(--surface2); }
+  .btn-row { display: flex; gap: 10px; }
+  .btn-row .btn { width: auto; flex: 1; }
+
+  /* ── CANDIDATE DETAIL ── */
+  .detail-header {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .detail-name { font-size: 19px; font-weight: 700; margin-bottom: 8px; }
+  .detail-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+  .tag {
+    font-size: 11px;
+    color: var(--text2);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-family: var(--mono);
+  }
+
+  .meeting-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+  .meeting-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    cursor: pointer;
+  }
+  .meeting-card:active { border-color: var(--accent); }
+  .meeting-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .meeting-date {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent2);
+    font-weight: 500;
+  }
+  .meeting-place { font-size: 11px; color: var(--text3); }
+  .meeting-preview {
+    font-size: 12px;
+    color: var(--text2);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .next-meeting-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--green);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+  }
+  .next-meeting-label {
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+  }
+  .next-meeting-date {
+    font-family: var(--mono);
+    font-size: 15px;
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  /* ── FORMS ── */
+  .form-group { margin-bottom: 16px; }
+  .form-label {
+    display: block;
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  .form-input, .form-textarea, .form-select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: var(--sans);
+  }
+  .form-input:focus, .form-textarea:focus, .form-select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .form-textarea { min-height: 100px; resize: vertical; line-height: 1.5; }
+  .form-row { display: flex; gap: 10px; }
+  .form-row .form-group { flex: 1; }
+
+  /* ── MODAL / OVERLAY FORM ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 200;
+    overflow-y: auto;
+  }
+  .modal-overlay.active { display: block; }
+  .modal-box {
+    background: var(--bg);
+    min-height: 100vh;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .modal-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 16px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+  }
+  .modal-title { font-size: 15px; font-weight: 600; }
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--text2);
+    font-size: 22px;
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+  .modal-body { padding: 20px 16px 100px; }
+
+  .fab {
+    position: fixed;
+    bottom: 24px;
+    right: 50%;
+    transform: translateX(360px);
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 50%;
+    width: 56px; height: 56px;
+    font-size: 26px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    cursor: pointer;
+    z-index: 50;
+  }
+  @media (max-width: 760px) {
+    .fab { right: 20px; transform: none; }
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--surface3);
+    border: 1px solid var(--accent);
+    color: var(--text);
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    z-index: 300;
+    transition: transform 0.25s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+
+  .loading-spinner {
+    width: 16px; height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .sync-status {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* ── PRINT / PDF EXPORT ── */
+  #printArea, #printAreaList { display: none; }
+  @media print {
+    body * { visibility: hidden; }
+    #printArea.print-active, #printArea.print-active *,
+    #printAreaList.print-active, #printAreaList.print-active * { visibility: visible; }
+    #printArea.print-active, #printAreaList.print-active {
+      display: block;
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      background: #fff;
+      color: #111;
+      padding: 40px;
+      font-family: Arial, sans-serif;
+    }
+    #printArea .p-eyebrow {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #a07a3f;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    #printArea .p-name {
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 18px;
+      color: #111;
+    }
+    #printArea .p-row {
+      display: flex;
+      padding: 10px 0;
+      border-bottom: 1px solid #ddd;
+    }
+    #printArea .p-label {
+      width: 180px;
+      font-size: 12px;
+      color: #777;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    #printArea .p-value {
+      flex: 1;
+      font-size: 14px;
+      color: #111;
+      white-space: pre-wrap;
+    }
+    #printArea .p-footer {
+      margin-top: 30px;
+      font-size: 11px;
+      color: #999;
+    }
+    #printArea .p-meetings-title {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #a07a3f;
+      font-weight: 700;
+      margin-top: 28px;
+      margin-bottom: 12px;
+    }
+    #printArea .p-meeting {
+      page-break-inside: avoid;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+    }
+    #printArea .p-meeting-head {
+      font-size: 12px;
+      font-weight: 700;
+      color: #111;
+      margin-bottom: 6px;
+    }
+    #printArea .p-meeting-desc {
+      font-size: 12px;
+      color: #333;
+      white-space: pre-wrap;
+      line-height: 1.5;
+    }
+    #printArea .p-meeting-next {
+      font-size: 11px;
+      color: #a07a3f;
+      margin-top: 6px;
+      font-weight: 600;
+    }
+    #printArea .p-meeting-empty {
+      font-size: 12px;
+      color: #999;
+      font-style: italic;
+    }
+    #printAreaList table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+    }
+    #printAreaList th {
+      text-align: left;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #777;
+      padding: 8px 10px;
+      border-bottom: 2px solid #ccc;
+    }
+    #printAreaList td {
+      font-size: 12px;
+      color: #222;
+      padding: 9px 10px;
+      border-bottom: 1px solid #e5e5e5;
+      vertical-align: top;
+    }
+    #printAreaList tr { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" class="back-link">← <span class="logo">4fin<span> OS</span></span></a>
+  <div class="sync-status" id="syncStatus">●&nbsp;připraveno</div>
+</header>
+
+<div class="shell">
+
+  <!-- VIEW 1: Manager overview -->
+  <div class="view active" id="view-home">
+    <div class="page-title">Náborová evidence</div>
+    <div class="page-sub">Přehled rozpracovaných náborů podle manažera</div>
+    <div class="manager-grid" id="managerGrid"></div>
+  </div>
+
+  <!-- VIEW 2: Candidate list for a manager -->
+  <div class="view" id="view-manager">
+    <a href="#" class="back-link" id="backToHome" style="margin-bottom:16px;display:inline-flex;">← Zpět na manažery</a>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+      <div>
+        <div class="page-title" id="managerTitle">—</div>
+        <div class="page-sub" id="managerSub">Kandidáti seřazení od nejdéle opomíjených</div>
+      </div>
+      <button class="pdf-btn" id="printManagerListBtn" title="Tisk celého seznamu" style="width:auto;padding:0 14px;height:36px;gap:6px;font-size:12px;">⬇ Tisk seznamu</button>
+    </div>
+    <div class="section-label">Kandidáti</div>
+    <div class="candidate-list" id="candidateList"></div>
+    <button class="btn" id="addCandidateBtn">+ Přidat kandidáta</button>
+  </div>
+
+  <!-- VIEW 3: Candidate detail -->
+  <div class="view" id="view-candidate">
+    <a href="#" class="back-link" id="backToManager" style="margin-bottom:16px;display:inline-flex;">← Zpět na seznam</a>
+    <div class="detail-header">
+      <div class="detail-name" id="candDetailName">—</div>
+      <div class="detail-tags">
+        <span class="tag" id="candDetailOrigin">—</span>
+        <span class="tag" id="candDetailCompany">—</span>
+        <span class="tag" id="candDetailPosition">—</span>
+        <span class="tag" id="candDetailMeetingCount">0 schůzek</span>
+      </div>
+      <div id="candDetailProblemBox" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+        <div class="form-label" style="margin-bottom:6px;">Problematický stav</div>
+        <div id="candDetailProblem" style="font-size:13px;color:var(--text2);line-height:1.6;white-space:pre-wrap;"></div>
+      </div>
+    </div>
+
+    <div id="nextMeetingBox" style="display:none;" class="next-meeting-box">
+      <div class="next-meeting-label">Příští schůzka</div>
+      <div class="next-meeting-date" id="nextMeetingDate">—</div>
+    </div>
+
+    <div class="section-label" id="meetingHistoryLabel">Historie schůzek</div>
+    <div class="meeting-list" id="meetingList"></div>
+    <div class="btn-row">
+      <button class="btn" id="addMeetingBtn">+ Přidat schůzku</button>
+      <button class="btn btn-secondary" id="editCandidateBtn">Upravit</button>
+    </div>
+    <button class="btn btn-secondary" id="exportPdfBtn" style="margin-top:10px;">⬇ Exportovat do PDF</button>
+  </div>
+
+</div>
+
+<!-- MODAL: Add candidate -->
+<div class="modal-overlay" id="modalCandidate">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="modalCandidateTitle">Nový kandidát</div>
+      <button class="modal-close" data-close="modalCandidate">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Jméno</label>
+          <input type="text" class="form-input" id="fJmeno" placeholder="Jan">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Příjmení</label>
+          <input type="text" class="form-input" id="fPrijmeni" placeholder="Novák">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Město působnosti</label>
+        <input type="text" class="form-input" id="fOdkud" placeholder="např. Praha, Brno, Ostrava…">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Společnost</label>
+        <input type="text" class="form-input" id="fSpolecnost" placeholder="odkud kandidát přichází">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Pozice</label>
+        <input type="text" class="form-input" id="fPozice" placeholder="např. Konzultant, Senior konzultant">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Problematický stav</label>
+        <textarea class="form-textarea" id="fProblem" placeholder="V čem je kandidát problematický / co je potřeba řešit…" style="min-height:70px;"></textarea>
+      </div>
+      <button class="btn" id="saveCandidateBtn" style="margin-top:8px;">Uložit kandidáta</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add/edit meeting -->
+<div class="modal-overlay" id="modalMeeting">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="modalMeetingTitle">Nová schůzka</div>
+      <button class="modal-close" data-close="modalMeeting">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Datum schůzky</label>
+          <input type="date" class="form-input" id="fMeetDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Čas</label>
+          <input type="time" class="form-input" id="fMeetTime">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Místo schůzky</label>
+        <input type="text" class="form-input" id="fMeetPlace" placeholder="např. Kancelář Praha, kavárna…">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Co se na schůzce dělo</label>
+        <textarea class="form-textarea" id="fMeetDesc" placeholder="Popis průběhu schůzky…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Termín další schůzky (nepovinné)</label>
+        <input type="date" class="form-input" id="fNextDate">
+      </div>
+      <button class="btn" id="saveMeetingBtn" style="margin-top:8px;">Uložit schůzku</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Meeting detail (read) -->
+<div class="modal-overlay" id="modalMeetingView">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Detail schůzky</div>
+      <button class="modal-close" data-close="modalMeetingView">×</button>
+    </div>
+    <div class="modal-body" id="meetingViewBody"></div>
+  </div>
+</div>
+
+<button class="fab" id="quickAddFab" style="display:none;">+</button>
+
+<div id="printArea">
+  <div class="p-eyebrow">4fin Better Together — Náborová evidence</div>
+  <div class="p-name" id="pName">—</div>
+  <div class="p-row"><div class="p-label">Město působnosti</div><div class="p-value" id="pOdkud">—</div></div>
+  <div class="p-row"><div class="p-label">Společnost</div><div class="p-value" id="pSpolecnost">—</div></div>
+  <div class="p-row"><div class="p-label">Pozice</div><div class="p-value" id="pPozice">—</div></div>
+  <div class="p-row"><div class="p-label">Problematický stav</div><div class="p-value" id="pProblem">—</div></div>
+  <div class="p-row"><div class="p-label">Regionální ředitel</div><div class="p-value" id="pManager">—</div></div>
+  <div class="p-meetings-title">Historie schůzek</div>
+  <div id="pMeetings"></div>
+  <div class="p-footer" id="pDate">—</div>
+</div>
+
+<div id="printAreaList">
+  <div class="p-eyebrow">4fin Better Together — Náborová evidence</div>
+  <div class="p-name" id="plManagerName">—</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Kandidát</th>
+        <th>Pozice</th>
+        <th>Společnost</th>
+        <th>Poslední schůzka</th>
+        <th>Další schůzka</th>
+        <th>Počet schůzek</th>
+      </tr>
+    </thead>
+    <tbody id="plTableBody"></tbody>
+  </table>
+  <div class="p-footer" id="plDate">—</div>
+</div>
+
+<div class="toast" id="toast"><span class="toast-dot"></span><span id="toastText">Uloženo</span></div>
+
+<script>
+// ============ CONFIG ============
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyqnJsAlmzOAntypivM5oiLt8twpNJkJrUaK4D-rkvQPzFC_btwUrC8ivasYrnWbdsM6g/exec';
+
+const MANAGERS = [
+  { id: 'eisenreich',   name: 'Martin Eisenreich' },
+  { id: 'kruts',        name: 'Kruts Nataliia' },
+  { id: 'truhlar',      name: 'Truhlář Luboš' },
+  { id: 'honcharenko',  name: 'Honcharenko Olha' },
+  { id: 'bugaeva',      name: 'Bugaeva Marina' }
+];
+
+// ============ STATE ============
+let DATA = { candidates: [] }; // loaded from sheet: {id, managerId, jmeno, prijmeni, odkud, pozice, meetings:[{id,date,time,place,desc,nextDate}]}
+let currentManagerId = null;
+let currentCandidateId = null;
+let editingCandidateId = null; // when editing existing candidate via modal
+let editingMeetingId = null;
+
+const LOCAL_KEY = '4fin_nabor_cache';
+
+// ============ INIT ============
+document.addEventListener('DOMContentLoaded', () => {
+  renderManagerGrid();
+  loadFromCache();
+  syncFromSheet();
+  bindEvents();
+});
+
+function bindEvents() {
+  document.getElementById('backToHome').addEventListener('click', (e) => { e.preventDefault(); showView('view-home'); });
+  document.getElementById('backToManager').addEventListener('click', (e) => { e.preventDefault(); showView('view-manager'); });
+  document.getElementById('addCandidateBtn').addEventListener('click', () => openCandidateModal());
+  document.getElementById('addMeetingBtn').addEventListener('click', () => openMeetingModal());
+  document.getElementById('editCandidateBtn').addEventListener('click', () => openCandidateModal(currentCandidateId));
+  document.getElementById('exportPdfBtn').addEventListener('click', () => exportCandidatePdf());
+  document.getElementById('printManagerListBtn').addEventListener('click', exportManagerListPdf);
+  document.getElementById('saveCandidateBtn').addEventListener('click', saveCandidate);
+  document.getElementById('saveMeetingBtn').addEventListener('click', saveMeeting);
+  document.querySelectorAll('[data-close]').forEach(btn => {
+    btn.addEventListener('click', () => closeModal(btn.dataset.close));
+  });
+}
+
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function openModal(id) { document.getElementById(id).classList.add('active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+// ============ RENDER: home ============
+function renderManagerGrid() {
+  const grid = document.getElementById('managerGrid');
+  grid.innerHTML = MANAGERS.map(m => {
+    const count = DATA.candidates.filter(c => c.managerId === m.id).length;
+    const initials = m.name.split(' ').map(p => p[0]).slice(0,2).join('').toUpperCase();
+    return `<button class="manager-card" onclick="openManager('${m.id}')">
+      <div class="manager-initials">${initials}</div>
+      <div class="manager-name">${m.name}</div>
+      <div class="manager-count"><strong>${count}</strong> ${count === 1 ? 'kandidát' : (count >= 2 && count <= 4 ? 'kandidáti' : 'kandidátů')}</div>
+    </button>`;
+  }).join('');
+}
+
+function openManager(managerId) {
+  currentManagerId = managerId;
+  const m = MANAGERS.find(x => x.id === managerId);
+  document.getElementById('managerTitle').textContent = m.name;
+  renderCandidateList();
+  showView('view-manager');
+}
+
+function renderCandidateList() {
+  const list = DATA.candidates.filter(c => c.managerId === currentManagerId);
+  const container = document.getElementById('candidateList');
+  if (list.length === 0) {
+    container.innerHTML = `<div class="empty-state">Zatím žádní kandidáti.<br>Přidej prvního tlačítkem níže.</div>`;
+    return;
+  }
+
+  // Spočítej datum poslední proběhlé schůzky pro každého kandidáta
+  const enriched = list.map(c => {
+    const meetings = (c.meetings || []).slice().sort((a,b) => (a.date||'').localeCompare(b.date||''));
+    const last = meetings[meetings.length - 1];
+    return { c, last, lastDate: last ? last.date : null };
+  });
+
+  // Seřaď: bez schůzky úplně nahoru (nejvíc potřebují pozornost), pak od nejstaršího data
+  enriched.sort((a, b) => {
+    if (!a.lastDate && !b.lastDate) return 0;
+    if (!a.lastDate) return -1;
+    if (!b.lastDate) return 1;
+    return a.lastDate.localeCompare(b.lastDate);
+  });
+
+  const today = new Date().toISOString().slice(0,10);
+
+  container.innerHTML = enriched.map(({c, last}) => {
+    let lastVal, lastCls;
+    if (!last) {
+      lastVal = '—'; lastCls = 'empty';
+    } else {
+      const daysAgo = daysBetween(last.date, today);
+      lastVal = formatDateShort(last.date);
+      lastCls = daysAgo >= 21 ? 'stale-text' : (daysAgo >= 10 ? 'warn-text' : '');
+    }
+
+    const nextDate = last && last.nextDate ? last.nextDate : null;
+    let nextVal, nextCls;
+    if (!nextDate) {
+      nextVal = '—'; nextCls = 'empty';
+    } else {
+      nextVal = formatDateShort(nextDate);
+      nextCls = 'next';
+    }
+
+    const preview = last && last.desc ? escapeHtml(truncate(last.desc, 60)) : 'Bez poznámky ze schůzky';
+    return `<div class="candidate-card">
+      <div class="candidate-info" onclick="openCandidate('${c.id}')" style="cursor:pointer;">
+        <div class="candidate-name">${escapeHtml(c.jmeno)} ${escapeHtml(c.prijmeni)}</div>
+        <div class="candidate-meta">${escapeHtml(c.pozice || '—')}</div>
+        <div class="candidate-meta" style="margin-top:2px;color:var(--text3);">${preview}</div>
+      </div>
+      <div class="candidate-cols">
+        <div>
+          <div class="candidate-col-label">Poslední</div>
+          <div class="candidate-col-value ${lastCls}">${lastVal}</div>
+        </div>
+        <div>
+          <div class="candidate-col-label">Další</div>
+          <div class="candidate-col-value ${nextCls}">${nextVal}</div>
+        </div>
+      </div>
+      <button class="pdf-btn" title="Exportovat do PDF" onclick="event.stopPropagation();exportCandidatePdf('${c.id}')">⬇</button>
+      <div class="candidate-arrow" onclick="openCandidate('${c.id}')" style="cursor:pointer;">›</div>
+    </div>`;
+  }).join('');
+}
+
+function daysBetween(isoDate, todayIso) {
+  const d1 = new Date(isoDate + 'T00:00:00');
+  const d2 = new Date(todayIso + 'T00:00:00');
+  return Math.round((d2 - d1) / 86400000);
+}
+
+function truncate(str, len) {
+  if (!str) return '';
+  return str.length > len ? str.slice(0, len) + '…' : str;
+}
+
+// ============ RENDER: candidate detail ============
+function openCandidate(candidateId) {
+  currentCandidateId = candidateId;
+  const c = DATA.candidates.find(x => x.id === candidateId);
+  if (!c) return;
+  document.getElementById('candDetailName').textContent = `${c.jmeno} ${c.prijmeni}`;
+  document.getElementById('candDetailOrigin').textContent = c.odkud || '—';
+  document.getElementById('candDetailCompany').textContent = c.spolecnost || '—';
+  document.getElementById('candDetailPosition').textContent = c.pozice || '—';
+
+  const meetings = (c.meetings || []).slice().sort((a,b) => (a.date||'').localeCompare(b.date||''));
+  document.getElementById('candDetailMeetingCount').textContent = meetings.length + (meetings.length === 1 ? ' schůzka' : (meetings.length >= 2 && meetings.length <= 4 ? ' schůzky' : ' schůzek'));
+  document.getElementById('meetingHistoryLabel').textContent = `Historie schůzek (${meetings.length})`;
+
+  const problemBox = document.getElementById('candDetailProblemBox');
+  if (c.problem) {
+    problemBox.style.display = 'block';
+    document.getElementById('candDetailProblem').textContent = c.problem;
+  } else {
+    problemBox.style.display = 'none';
+  }
+
+  const lastMeeting = meetings[meetings.length - 1];
+  const nextBox = document.getElementById('nextMeetingBox');
+  if (lastMeeting && lastMeeting.nextDate) {
+    nextBox.style.display = 'block';
+    document.getElementById('nextMeetingDate').textContent = formatDateLong(lastMeeting.nextDate);
+  } else {
+    nextBox.style.display = 'none';
+  }
+
+  const meetingListEl = document.getElementById('meetingList');
+  if (meetings.length === 0) {
+    meetingListEl.innerHTML = `<div class="empty-state">Žádné schůzky zatím nejsou zaznamenané.</div>`;
+  } else {
+    meetingListEl.innerHTML = meetings.slice().reverse().map((m, idx) => `
+      <div class="meeting-card" onclick="viewMeeting('${m.id}')">
+        <div class="meeting-top">
+          <div class="meeting-date">#${meetings.length - idx} · ${formatDateLong(m.date)}${m.time ? ' · ' + m.time : ''}</div>
+          <div class="meeting-place">${escapeHtml(m.place || '')}</div>
+        </div>
+        <div class="meeting-preview">${escapeHtml(m.desc || '')}</div>
+      </div>`).join('');
+  }
+
+  showView('view-candidate');
+}
+
+function viewMeeting(meetingId) {
+  const c = DATA.candidates.find(x => x.id === currentCandidateId);
+  const m = (c.meetings || []).find(x => x.id === meetingId);
+  if (!m) return;
+  document.getElementById('meetingViewBody').innerHTML = `
+    <div class="form-group">
+      <div class="form-label">Datum a čas</div>
+      <div style="font-size:16px;font-weight:600;">${formatDateLong(m.date)}${m.time ? ' · ' + m.time : ''}</div>
+    </div>
+    <div class="form-group">
+      <div class="form-label">Místo</div>
+      <div style="font-size:14px;">${escapeHtml(m.place || '—')}</div>
+    </div>
+    <div class="form-group">
+      <div class="form-label">Průběh schůzky</div>
+      <div style="font-size:14px;line-height:1.6;white-space:pre-wrap;">${escapeHtml(m.desc || '—')}</div>
+    </div>
+    ${m.nextDate ? `<div class="form-group">
+      <div class="form-label">Domluvená další schůzka</div>
+      <div style="font-size:14px;color:var(--accent2);">${formatDateLong(m.nextDate)}</div>
+    </div>` : ''}
+    <button class="btn btn-secondary" style="margin-top:8px;" onclick="closeModal('modalMeetingView');openMeetingModal('${m.id}')">Upravit tuto schůzku</button>
+  `;
+  openModal('modalMeetingView');
+}
+
+// ============ CANDIDATE MODAL ============
+function openCandidateModal(candidateId) {
+  editingCandidateId = candidateId || null;
+  if (candidateId) {
+    const c = DATA.candidates.find(x => x.id === candidateId);
+    document.getElementById('modalCandidateTitle').textContent = 'Upravit kandidáta';
+    document.getElementById('fJmeno').value = c.jmeno || '';
+    document.getElementById('fPrijmeni').value = c.prijmeni || '';
+    document.getElementById('fOdkud').value = c.odkud || '';
+    document.getElementById('fSpolecnost').value = c.spolecnost || '';
+    document.getElementById('fPozice').value = c.pozice || '';
+    document.getElementById('fProblem').value = c.problem || '';
+  } else {
+    document.getElementById('modalCandidateTitle').textContent = 'Nový kandidát';
+    document.getElementById('fJmeno').value = '';
+    document.getElementById('fPrijmeni').value = '';
+    document.getElementById('fOdkud').value = '';
+    document.getElementById('fSpolecnost').value = '';
+    document.getElementById('fPozice').value = '';
+    document.getElementById('fProblem').value = '';
+  }
+  openModal('modalCandidate');
+}
+
+function saveCandidate() {
+  const jmeno = document.getElementById('fJmeno').value.trim();
+  const prijmeni = document.getElementById('fPrijmeni').value.trim();
+  const odkud = document.getElementById('fOdkud').value.trim();
+  const spolecnost = document.getElementById('fSpolecnost').value.trim();
+  const pozice = document.getElementById('fPozice').value.trim();
+  const problem = document.getElementById('fProblem').value.trim();
+
+  if (!jmeno || !prijmeni) {
+    showToast('Vyplň alespoň jméno a příjmení', true);
+    return;
+  }
+
+  if (editingCandidateId) {
+    const c = DATA.candidates.find(x => x.id === editingCandidateId);
+    c.jmeno = jmeno; c.prijmeni = prijmeni; c.odkud = odkud; c.spolecnost = spolecnost; c.pozice = pozice; c.problem = problem;
+  } else {
+    const newCand = {
+      id: 'C-' + Date.now(),
+      managerId: currentManagerId,
+      jmeno, prijmeni, odkud, spolecnost, pozice, problem,
+      meetings: []
+    };
+    DATA.candidates.push(newCand);
+    currentCandidateId = newCand.id;
+  }
+
+  saveToCache();
+  pushToSheet();
+  closeModal('modalCandidate');
+  renderManagerGrid();
+  renderCandidateList();
+  if (editingCandidateId) openCandidate(editingCandidateId);
+  showToast('Kandidát uložen');
+}
+
+// ============ MEETING MODAL ============
+function openMeetingModal(meetingId) {
+  editingMeetingId = meetingId || null;
+  if (meetingId) {
+    const c = DATA.candidates.find(x => x.id === currentCandidateId);
+    const m = (c.meetings || []).find(x => x.id === meetingId);
+    document.getElementById('modalMeetingTitle').textContent = 'Upravit schůzku';
+    document.getElementById('fMeetDate').value = m.date || '';
+    document.getElementById('fMeetTime').value = m.time || '';
+    document.getElementById('fMeetPlace').value = m.place || '';
+    document.getElementById('fMeetDesc').value = m.desc || '';
+    document.getElementById('fNextDate').value = m.nextDate || '';
+  } else {
+    document.getElementById('modalMeetingTitle').textContent = 'Nová schůzka';
+    const today = new Date().toISOString().slice(0,10);
+    document.getElementById('fMeetDate').value = today;
+    document.getElementById('fMeetTime').value = '';
+    document.getElementById('fMeetPlace').value = '';
+    document.getElementById('fMeetDesc').value = '';
+    document.getElementById('fNextDate').value = '';
+  }
+  openModal('modalMeeting');
+}
+
+function saveMeeting() {
+  const date = document.getElementById('fMeetDate').value;
+  const time = document.getElementById('fMeetTime').value;
+  const place = document.getElementById('fMeetPlace').value.trim();
+  const desc = document.getElementById('fMeetDesc').value.trim();
+  const nextDate = document.getElementById('fNextDate').value;
+
+  if (!date) {
+    showToast('Vyplň datum schůzky', true);
+    return;
+  }
+
+  const c = DATA.candidates.find(x => x.id === currentCandidateId);
+  if (!c.meetings) c.meetings = [];
+
+  if (editingMeetingId) {
+    const m = c.meetings.find(x => x.id === editingMeetingId);
+    m.date = date; m.time = time; m.place = place; m.desc = desc; m.nextDate = nextDate;
+  } else {
+    c.meetings.push({
+      id: 'M-' + Date.now(),
+      date, time, place, desc, nextDate
+    });
+  }
+
+  saveToCache();
+  pushToSheet();
+  closeModal('modalMeeting');
+  openCandidate(currentCandidateId);
+  showToast(editingMeetingId ? 'Schůzka upravena' : 'Schůzka uložena');
+  editingMeetingId = null;
+}
+
+// ============ PERSISTENCE ============
+function saveToCache() {
+  try { localStorage.setItem(LOCAL_KEY, JSON.stringify(DATA)); } catch(e) {}
+}
+function loadFromCache() {
+  try {
+    const raw = localStorage.getItem(LOCAL_KEY);
+    if (raw) {
+      DATA = JSON.parse(raw);
+      renderManagerGrid();
+      if (currentManagerId) renderCandidateList();
+    }
+  } catch(e) {}
+}
+
+function setSyncStatus(state) {
+  const el = document.getElementById('syncStatus');
+  if (state === 'syncing') el.innerHTML = '<span class="loading-spinner"></span>&nbsp;sync…';
+  else if (state === 'ok') el.innerHTML = '●&nbsp;synchronizováno';
+  else if (state === 'error') el.innerHTML = '●&nbsp;offline (lokální kopie)';
+  else el.innerHTML = '●&nbsp;připraveno';
+}
+
+function syncFromSheet() {
+  setSyncStatus('syncing');
+  fetch(APPS_SCRIPT_URL + '?action=getNabory')
+    .then(r => r.json())
+    .then(json => {
+      // Pokud server vrátil chybu (např. poškozený/příliš velký JSON v Sheets),
+      // NIKDY tím nepřepisuj lokální data — jinak by zmizeli všichni kandidáti.
+      if (json && json.error) {
+        console.log('Sync chyba ze serveru, ponechávám lokální kopii:', json.error);
+        setSyncStatus('error');
+        showToast('Chyba synchronizace ze serveru — zobrazena lokální kopie', true);
+        return;
+      }
+      if (json && Array.isArray(json.candidates)) {
+        DATA = json;
+        saveToCache();
+        renderManagerGrid();
+        if (currentManagerId) renderCandidateList();
+      }
+      setSyncStatus('ok');
+    })
+    .catch(err => {
+      console.log('Sync chyba (pracuji s lokální kopií):', err);
+      setSyncStatus('error');
+    });
+}
+
+function pushToSheet() {
+  setSyncStatus('syncing');
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action: 'saveNabory', data: DATA })
+  })
+    .then(r => r.json())
+    .then(res => {
+      if (res && res.error) {
+        console.log('Uložení do Sheet selhalo (chyba serveru):', res.error);
+        setSyncStatus('error');
+        showToast('Chyba ukládání na server — data jsou zatím jen lokálně', true);
+        return;
+      }
+      setSyncStatus('ok');
+    })
+    .catch(err => {
+      console.log('Uložení do Sheet selhalo, data jsou v lokální kopii:', err);
+      setSyncStatus('error');
+    });
+}
+
+function exportCandidatePdf(candidateId) {
+  const id = candidateId || currentCandidateId;
+  const c = DATA.candidates.find(x => x.id === id);
+  if (!c) return;
+  const m = MANAGERS.find(x => x.id === c.managerId);
+
+  document.getElementById('pName').textContent = `${c.jmeno} ${c.prijmeni}`;
+  document.getElementById('pOdkud').textContent = c.odkud || '—';
+  document.getElementById('pSpolecnost').textContent = c.spolecnost || '—';
+  document.getElementById('pPozice').textContent = c.pozice || '—';
+  document.getElementById('pProblem').textContent = c.problem || '—';
+  document.getElementById('pManager').textContent = m ? m.name : '—';
+  document.getElementById('pDate').textContent = 'Vygenerováno ' + new Date().toLocaleDateString('cs-CZ', { day:'numeric', month:'long', year:'numeric' });
+
+  const meetings = (c.meetings || []).slice().sort((a,b) => (a.date||'').localeCompare(b.date||''));
+  const meetingsEl = document.getElementById('pMeetings');
+  if (meetings.length === 0) {
+    meetingsEl.innerHTML = `<div class="p-meeting-empty">Zatím nejsou zaznamenané žádné schůzky.</div>`;
+  } else {
+    meetingsEl.innerHTML = meetings.map((mt, idx) => `
+      <div class="p-meeting">
+        <div class="p-meeting-head">Schůzka #${idx + 1} — ${formatDateLong(mt.date)}${mt.time ? ' · ' + mt.time : ''}${mt.place ? ' — ' + escapeHtml(mt.place) : ''}</div>
+        <div class="p-meeting-desc">${escapeHtml(mt.desc || '—')}</div>
+        ${mt.nextDate ? `<div class="p-meeting-next">Domluvená další schůzka: ${formatDateLong(mt.nextDate)}</div>` : ''}
+      </div>`).join('');
+  }
+
+  document.getElementById('printArea').classList.add('print-active');
+  document.getElementById('printAreaList').classList.remove('print-active');
+  window.print();
+}
+
+function exportManagerListPdf() {
+  const m = MANAGERS.find(x => x.id === currentManagerId);
+  const list = DATA.candidates.filter(c => c.managerId === currentManagerId);
+
+  document.getElementById('plManagerName').textContent = (m ? m.name : '—') + ' — přehled kandidátů';
+  document.getElementById('plDate').textContent = 'Vygenerováno ' + new Date().toLocaleDateString('cs-CZ', { day:'numeric', month:'long', year:'numeric' });
+
+  const today = new Date().toISOString().slice(0,10);
+  const enriched = list.map(c => {
+    const meetings = (c.meetings || []).slice().sort((a,b) => (a.date||'').localeCompare(b.date||''));
+    const last = meetings[meetings.length - 1];
+    return { c, last, lastDate: last ? last.date : null, count: meetings.length };
+  });
+  enriched.sort((a, b) => {
+    if (!a.lastDate && !b.lastDate) return 0;
+    if (!a.lastDate) return -1;
+    if (!b.lastDate) return 1;
+    return a.lastDate.localeCompare(b.lastDate);
+  });
+
+  const tbody = document.getElementById('plTableBody');
+  if (enriched.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6">Žádní kandidáti.</td></tr>`;
+  } else {
+    tbody.innerHTML = enriched.map(({c, last, count}) => `
+      <tr>
+        <td><strong>${escapeHtml(c.jmeno)} ${escapeHtml(c.prijmeni)}</strong></td>
+        <td>${escapeHtml(c.pozice || '—')}</td>
+        <td>${escapeHtml(c.spolecnost || '—')}</td>
+        <td>${last ? formatDateShort(last.date) : '—'}</td>
+        <td>${last && last.nextDate ? formatDateShort(last.nextDate) : '—'}</td>
+        <td>${count}</td>
+      </tr>`).join('');
+  }
+
+  document.getElementById('printAreaList').classList.add('print-active');
+  document.getElementById('printArea').classList.remove('print-active');
+  window.print();
+}
+
+// ============ HELPERS ============
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function formatDateShort(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric' });
+}
+function formatDateLong(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+function showToast(text, isError) {
+  const toast = document.getElementById('toast');
+  document.getElementById('toastText').textContent = text;
+  toast.querySelector('.toast-dot').style.background = isError ? 'var(--red)' : 'var(--green)';
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2200);
+}
+</script>
+</body>
+</html>
