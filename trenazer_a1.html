@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4fin | Trenažér A1 — Představení společnosti</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  :root{--bg:#0d0f14;--surface:#151820;--surface2:#1c2030;--border:#252a3a;--accent:#c8a96e;--accent2:#e8c98e;--green:#4caf82;--red:#e05252;--yellow:#e0a832;--blue:#5b8dee;--text:#e8eaf0;--text2:#8892a4;--text3:#555f72;--radius:10px;--mono:'JetBrains Mono',monospace;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+  .logo{font-family:var(--mono);font-size:13px;color:var(--accent);letter-spacing:0.08em;}
+  .logo span{color:var(--text3);}
+  .back-btn{font-size:13px;color:var(--text2);text-decoration:none;}
+  .shell{max-width:900px;margin:0 auto;padding:28px 20px 80px;display:grid;grid-template-columns:260px 1fr;gap:20px;}
+  @media(max-width:700px){.shell{grid-template-columns:1fr;}}
+  .sidebar{display:flex;flex-direction:column;gap:12px;}
+  .sidebar-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
+  .sidebar-title{font-size:10px;font-weight:700;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;}
+  .phase-list{display:flex;flex-direction:column;gap:5px;}
+  .phase-item{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:7px;cursor:pointer;transition:background 0.15s;}
+  .phase-item:hover{background:var(--surface2);}
+  .phase-item.active{background:rgba(200,169,110,0.1);border:1px solid rgba(200,169,110,0.3);}
+  .phase-item.done{opacity:0.6;}
+  .phase-num{width:20px;height:20px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;font-family:var(--mono);flex-shrink:0;color:var(--text3);}
+  .phase-item.active .phase-num{background:var(--accent);color:var(--bg);border-color:var(--accent);}
+  .phase-item.done .phase-num{background:var(--green);color:var(--bg);border-color:var(--green);}
+  .phase-name{font-size:11px;font-weight:500;color:var(--text2);}
+  .phase-item.active .phase-name{color:var(--accent);}
+  .progress-wrap{margin-bottom:4px;}
+  .progress-label{font-size:11px;color:var(--text3);margin-bottom:6px;display:flex;justify-content:space-between;}
+  .progress-bar{height:4px;background:var(--border);border-radius:2px;}
+  .progress-fill{height:4px;background:var(--accent);border-radius:2px;transition:width 0.5s;}
+  .lang-btns{display:flex;gap:6px;}
+  .lang-btn{flex:1;padding:7px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;text-align:center;}
+  .lang-btn.active{background:var(--accent);color:var(--bg);border-color:var(--accent);}
+  .score-box{text-align:center;}
+  .score-val{font-size:32px;font-weight:700;font-family:var(--mono);color:var(--accent);}
+  .score-label{font-size:11px;color:var(--text3);margin-top:2px;}
+  .main{display:flex;flex-direction:column;gap:0;}
+  .chat-area{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;height:540px;}
+  .chat-header{padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;}
+  .client-avatar{width:34px;height:34px;border-radius:50%;background:rgba(91,141,238,0.15);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+  .client-info{flex:1;}
+  .client-name{font-size:14px;font-weight:600;}
+  .client-status{font-size:11px;color:var(--green);display:flex;align-items:center;gap:4px;}
+  .client-status::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;}
+  .phase-badge{font-size:10px;font-weight:600;padding:3px 9px;border-radius:99px;background:rgba(200,169,110,0.15);color:var(--accent);font-family:var(--mono);}
+  .messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;}
+  .messages::-webkit-scrollbar{width:4px;}
+  .messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+  .msg{display:flex;gap:8px;max-width:85%;}
+  .msg.client{align-self:flex-start;}
+  .msg.poradce{align-self:flex-end;flex-direction:row-reverse;}
+  .msg.system{align-self:center;max-width:100%;}
+  .msg-avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:2px;}
+  .msg.client .msg-avatar{background:rgba(91,141,238,0.15);}
+  .msg.poradce .msg-avatar{background:rgba(200,169,110,0.15);}
+  .msg-bubble{padding:9px 13px;border-radius:12px;font-size:13px;line-height:1.5;}
+  .msg.client .msg-bubble{background:var(--surface2);border:1px solid var(--border);border-top-left-radius:3px;}
+  .msg.poradce .msg-bubble{background:rgba(200,169,110,0.12);border:1px solid rgba(200,169,110,0.2);border-top-right-radius:3px;}
+  .msg.system .msg-bubble{background:var(--surface2);border:1px solid var(--border);border-radius:8px;width:100%;font-size:12px;color:var(--text2);}
+  .msg-time{font-size:10px;color:var(--text3);margin-top:3px;font-family:var(--mono);}
+  .msg.poradce .msg-time{text-align:right;}
+  .msg.feedback{align-self:stretch;max-width:100%;}
+  .feedback-bubble{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;width:100%;}
+  .feedback-header{font-size:10px;font-weight:700;color:var(--accent);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;}
+  .feedback-row{display:flex;gap:8px;margin-bottom:5px;}
+  .feedback-icon{width:16px;flex-shrink:0;margin-top:1px;}
+  .feedback-text{font-size:12px;color:var(--text2);line-height:1.5;}
+  .feedback-score{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;margin-top:8px;}
+  .score-good{background:rgba(76,175,130,0.15);color:var(--green);}
+  .score-ok{background:rgba(224,168,50,0.15);color:var(--yellow);}
+  .score-bad{background:rgba(224,82,82,0.15);color:var(--red);}
+  .typing{display:flex;gap:4px;align-items:center;padding:10px 13px;}
+  .typing span{width:6px;height:6px;border-radius:50%;background:var(--text3);animation:typing 1.2s infinite;}
+  .typing span:nth-child(2){animation-delay:0.2s;}
+  .typing span:nth-child(3){animation-delay:0.4s;}
+  @keyframes typing{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-6px);}}
+  .input-area{padding:12px;border-top:1px solid var(--border);}
+  .input-wrap{display:flex;gap:8px;align-items:flex-end;}
+  .input-field{flex:1;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;padding:9px 13px;outline:none;resize:none;min-height:42px;max-height:120px;line-height:1.5;transition:border-color 0.15s;}
+  .input-field:focus{border-color:var(--accent);}
+  .send-btn{background:var(--accent);border:none;border-radius:10px;color:var(--bg);width:42px;height:42px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:17px;transition:background 0.15s;}
+  .send-btn:hover{background:var(--accent2);}
+  .send-btn:disabled{opacity:0.4;cursor:not-allowed;}
+  .suggestions{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
+  .sug-btn{font-size:11px;padding:4px 9px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;transition:all 0.15s;}
+  .sug-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .controls{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+  .ctrl-btn{font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;transition:all 0.15s;}
+  .ctrl-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .ctrl-btn.primary{background:var(--accent);color:var(--bg);border-color:var(--accent);}
+  .ctrl-btn.danger{background:rgba(224,82,82,0.1);color:var(--red);border-color:rgba(224,82,82,0.3);}
+  #startScreen{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center;gap:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);}
+  .start-icon{font-size:44px;}
+  .start-title{font-size:20px;font-weight:700;}
+  .start-sub{font-size:13px;color:var(--text2);max-width:400px;line-height:1.6;}
+  .scenario-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:440px;}
+  .scenario-btn{background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:13px;cursor:pointer;transition:all 0.15s;text-align:left;}
+  .scenario-btn:hover{border-color:var(--accent);}
+  .scenario-btn.selected{border-color:var(--accent);background:rgba(200,169,110,0.08);}
+  .scenario-title{font-size:13px;font-weight:600;margin-bottom:3px;}
+  .scenario-desc{font-size:11px;color:var(--text3);}
+  .loading-spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+<header>
+  <a class="back-btn" href="index.html">← 4fin OS</a>
+  <div class="logo">4fin <span>//</span> Trenažér A1</div>
+  <div id="clock" style="font-family:var(--mono);font-size:12px;color:var(--text3);"></div>
+</header>
+<div class="shell">
+  <div class="sidebar">
+    <div class="sidebar-card">
+      <div class="sidebar-title">Průběh schůzky A1</div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>Dokončeno</span><span id="progressPct">0%</span></div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      </div>
+      <div class="phase-list" id="phaseList"></div>
+    </div>
+    <div class="sidebar-card">
+      <div class="sidebar-title">Jazyk klienta</div>
+      <div class="lang-btns">
+        <button class="lang-btn active" id="langCZ" onclick="setLang('cz')">CZ</button>
+        <button class="lang-btn" id="langRU" onclick="setLang('ru')">RU</button>
+      </div>
+    </div>
+    <div class="sidebar-card">
+      <div class="sidebar-title">Skóre</div>
+      <div class="score-box"><div class="score-val" id="scoreVal">--</div><div class="score-label">bodů ze 100</div></div>
+    </div>
+    <div class="sidebar-card">
+      <div class="sidebar-title">Nápověda</div>
+      <div id="hintBox" style="font-size:12px;color:var(--text2);line-height:1.6;">Zahaj schůzku. Zeptej se klienta, co bylo pro něj nejdůležitější, proč souhlasil se schůzkou.</div>
+    </div>
+  </div>
+  <div class="main">
+    <div id="startScreen">
+      <div class="start-icon">🤝</div>
+      <div class="start-title">Trenažér A1 — Představení společnosti</div>
+      <div class="start-sub">Natrénuj si první schůzku s klientem. AI hraje klienta, ty prezentuješ 4fin a domlouváš druhý termín.</div>
+      <div style="font-size:13px;font-weight:600;color:var(--text2);margin-top:4px;">Vyber typ klienta:</div>
+      <div class="scenario-grid" id="scenarioGrid"></div>
+      <button class="ctrl-btn primary" onclick="startSession()" style="min-width:200px;padding:11px 22px;font-size:14px;margin-top:8px;">Zahájit trénink →</button>
+    </div>
+    <div id="chatArea" class="chat-area" style="display:none;">
+      <div class="chat-header">
+        <div class="client-avatar">👤</div>
+        <div class="client-info">
+          <div class="client-name" id="clientName">Klient</div>
+          <div class="client-status">připraven</div>
+        </div>
+        <div class="phase-badge" id="phaseBadge">Úvod</div>
+      </div>
+      <div class="messages" id="messages"></div>
+    </div>
+    <div id="inputSection" style="display:none;">
+      <div class="suggestions" id="suggestions"></div>
+      <div class="input-area" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);border-top-left-radius:0;border-top-right-radius:0;border-top:none;">
+        <div class="input-wrap">
+          <textarea class="input-field" id="userInput" placeholder="Napiš co říkáš klientovi..." rows="1"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"
+            oninput="autoResize(this)"></textarea>
+          <button class="send-btn" id="sendBtn" onclick="sendMessage()">&#10148;</button>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="ctrl-btn" onclick="requestFeedback()">Zpetna vazba</button>
+        <button class="ctrl-btn" onclick="nextPhase()">Dalsi faze</button>
+        <button class="ctrl-btn" onclick="showHint()">Napoveda</button>
+        <button class="ctrl-btn danger" onclick="resetSession()">Zacit znovu</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const PHASES = [
+  {id:'uvod', name:'Uvod a ocekavani', hint:'Zeptej se: "Co bylo pro vas nejdulezitejsi, proc jste shlasil s nasim setkanim? Jak by dneskek mel probihnout, abyste odchazeli spokojeni?"'},
+  {id:'zkusenosti', name:'Zkusenosti s poradenstvi', hint:'Na ceskem trhu je cca 33 000 zprostredkovatelu. Jen 10% jsou profesionalove. Zbytek pracuje v institucich zamereneych na prodej. Melo by klienta zajmat, ktera skupina zastupuje jeho poradce.'},
+  {id:'4finreality', name:'4fin Reality', hint:'Nemovitosti touri velkou cast majetku klientu. Spolupracujeme s Century 21. Dulezite je, aby s nemovitostmi pracovali pravy specialiste.'},
+  {id:'synergie', name:'Synergie a analyticka podpora', hint:'Konzultanti si navzajem sdili zkusenosti. Analyticke oddeleni kazdy den prochazi tisice produktu - pomaha ti vybrat nejlepsi pro klienta.'},
+  {id:'korporatni', name:'Korporatni obchody', hint:'Po navazani duvery s klientem muzeme resit i korporatni ulohy - pojisteni podnikatelu, floty, zamestnanecke benefity.'},
+  {id:'vnimani', name:'Nase vnimani poradenstvi', hint:'Klicove sdeleni: Na klienta pohlizime jako na celek. Banka, realitni sluzby, danovy poradce, advokat, notar, auditor - vse pod jednou strechou.'},
+  {id:'proces', name:'Poradensky proces', hint:'5 kroku: 1) Predstaveni 4fin, 2) Financni analyza, 3) Navrh reseni, 4) Administrativa, 5) Archivace dokumentu. Na pristi schuzce projdeme vsechna vasa prani a cile.'},
+  {id:'struktura', name:'Struktura osobnich financi', hint:'5 priorit od zakladu: 01 Zajisteni prijmu a majetku, 02 Zajisteni budoucich prijmu (renta), 03 Zajisteni bydleni, 04 Ostatni potreby, 05 Investovani. Profesionalni poradce postupuje dle techto priorit.'},
+  {id:'servis', name:'Nasledny servis', hint:'S klienty se vidim minimalne jednou rocne. Kontrolujem reseni, sledujeme jak roste majetek, aktualizujeme plan podle zmen v zivote.'},
+  {id:'doporuceni', name:'Doporuceni a termin', hint:'Sluzba je zdarma - platba formou doporuceni znamych. Na zaver ukazem vzorovym financni koncept. Domluv termin druhe schuzky do 3 pracovnich dni.'},
+];
+
+const SCENARIOS = [
+  {id:'referral_cz', name:'Doporuceny znamy', desc:'Prvni schuzka, zadna zkusenost s poradci', lang:'cz',
+   profile:'Jmenujes se Petr Horak, 35 let, zamestnanec, prijem 42 000 Kc. Zenat, jedna dite. Mas byt na hypotece. Prisels na schuzku na doporuceni kamarada. Nikdy jsi s financnim poradcem nemluvil. Si zvedly ale ne neprijatelny.'},
+  {id:'previous_cz', name:'Klient s poradcem', desc:'Ma poradce, byl zklamany', lang:'cz',
+   profile:'Jmenujes se Jana Kopecka, 42 let, OSVC, prijem cca 55 000 Kc. Sama, bydlis v pronajmu. Mas poradce od banky, ktery ti prodal pojistky co nepotrebujes. Jsi skepticka, ale zveda ta myslence skutecneho poradenstvi.'},
+  {id:'referral_ru', name:'Русскоязычный клиент', desc:'Первая встреча, рекомендован другом', lang:'ru',
+   profile:'Тебя зовут Александр Сидоров, 38 лет, работаешь в IT, зарплата 48 000 крон. Женат, двое детей. Снимаешь квартиру, думаешь о покупке. Пришел по рекомендации коллеги. С финансовым консультантом раньше не встречался. Немного настороженный, но готов слушать.'},
+  {id:'investor_cz', name:'Podnikatel s majetkem', desc:'Zna financni trh, klade technicke otazky', lang:'cz',
+   profile:'Jmenujes se Tomas Vesely, 48 let, majitel male firmy (stavebnictvi). Prijem cca 150 000 Kc. Mas nemovitosti (2 byty, vlastni dum). Investices do akcii pres broker. Dobres informovany, jsi skepticky k poradcum - "co mi reknete, co uz nevim?"'},
+];
+
+let currentLang = 'cz';
+let currentPhase = 0;
+let selectedScenario = null;
+let conversationHistory = [];
+let totalScore = 0;
+let scoreCount = 0;
+let isLoading = false;
+
+document.addEventListener('DOMContentLoaded', () => {
+  updateClock();
+  setInterval(updateClock, 30000);
+  renderPhases();
+  renderScenarios();
+});
+
+function updateClock(){const n=new Date();const el=document.getElementById('clock');if(el)el.textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');}
+
+function renderPhases(){
+  const list=document.getElementById('phaseList');
+  list.innerHTML=PHASES.map((p,i)=>`<div class="phase-item ${i===0?'active':''}" id="phase-${i}" onclick="jumpToPhase(${i})"><div class="phase-num">${i+1}</div><div class="phase-name">${p.name}</div></div>`).join('');
+}
+
+function renderScenarios(){
+  const grid=document.getElementById('scenarioGrid');
+  grid.innerHTML=SCENARIOS.map(s=>`<button class="scenario-btn" id="sc-${s.id}" onclick="selectScenario('${s.id}')"><div class="scenario-title">${s.name}</div><div class="scenario-desc">${s.desc}</div></button>`).join('');
+  selectScenario(SCENARIOS[0].id);
+}
+
+function selectScenario(id){
+  selectedScenario=SCENARIOS.find(s=>s.id===id);
+  document.querySelectorAll('.scenario-btn').forEach(b=>b.classList.remove('selected'));
+  const btn=document.getElementById('sc-'+id);
+  if(btn)btn.classList.add('selected');
+  setLang(selectedScenario.lang,false);
+}
+
+function setLang(lang,updateScenario=true){
+  currentLang=lang;
+  document.getElementById('langCZ').classList.toggle('active',lang==='cz');
+  document.getElementById('langRU').classList.toggle('active',lang==='ru');
+  if(updateScenario&&selectedScenario){const m=SCENARIOS.find(s=>s.lang===lang);if(m)selectScenario(m.id);}
+}
+
+async function startSession(){
+  if(!selectedScenario)return;
+  currentPhase=0;conversationHistory=[];totalScore=0;scoreCount=0;
+  document.getElementById('startScreen').style.display='none';
+  document.getElementById('chatArea').style.display='flex';
+  document.getElementById('inputSection').style.display='block';
+  const name=selectedScenario.profile.match(/Jmenujes se ([^,]+)|Тебя зовут ([^,]+)/);
+  document.getElementById('clientName').textContent=name?(name[1]||name[2]):'Klient';
+  document.getElementById('scoreVal').textContent='--';
+  updatePhaseUI();
+  addSystemMessage(currentLang==='cz'?'Trening zahajen. Jsi poradce, klient ceka. Zahaj schuzku!':`Тренировка начата. Ты консультант, клиент ждет.`);
+  setLoading(true);
+  const intro=await callAI(buildSystemPrompt(),[{role:'user',content:currentLang==='cz'?'Klient prave prisel na schuzku. Pozdrav ho kratkyce (1-2 vety).':'Клиент пришел на встречу. Поздоровайся с ним (1-2 предложения).'}]);
+  setLoading(false);
+  addMessage('client',intro);
+  updateSuggestions();
+}
+
+function buildSystemPrompt(){
+  const isRu=currentLang==='ru';
+  return `${isRu?'Ты играешь роль клиента на первой встрече с финансовым консультантом 4fin. Это встреча A1 — представление компании.':'Hraješ roli klienta na prvni schuzce s financnim poradcem 4fin. Toto je schuzka A1 - predstaveni spolecnosti.'}
+
+PROFIL KLIENTA:
+${selectedScenario.profile}
+
+AKTUALNI FAZE: ${PHASES[currentPhase].name}
+
+PRAVIDLA:
+- ${isRu?'Говори ТОЛЬКО как клиент. Реагируй реалистично по профилю. Короткие ответы (2-3 предложения).':'Mluv POUZE jako klient. Reaguj realisticky dle profilu. Kratke odpovedi (2-3 vety).'}
+- ${isRu?'Задавай вопросы о компании и услугах. Иногда будь скептичным.':'Klades otazky o spolecnosti a sluzbach. Obcas bud skepticky.'}
+- ${isRu?'Если консультант что-то пропустил или сделал ошибку — реагируй как растерянный клиент.':'Pokud poradce neco preskocil nebo udelal chybu, reaguj jako zmateney klient.'}
+- ${isRu?'Говори по-русски.':'Mluv cesky.'}`;
+}
+
+function buildFeedbackPrompt(msgs){
+  const phase=PHASES[currentPhase];
+  return `Jsi expert na financni poradenstvi 4fin. Dej zpetnou vazbu na vykon poradce.
+
+Faze: ${phase.name}
+Napoveda faze: ${phase.hint}
+
+Poradce rikam (poslednich 6 zprav):
+${msgs.map((m,i)=>`${i+1}. "${m}"`).join('\n')}
+
+Zpetna vazba v cestine:
+1. Co bylo dobre (konkretne)
+2. Co chybelo nebo bylo slabe
+3. Jeden tip na zlepseni
+
+SCORE: [0-100]`;
+}
+
+async function sendMessage(){
+  const input=document.getElementById('userInput');
+  const text=input.value.trim();
+  if(!text||isLoading)return;
+  input.value='';input.style.height='auto';
+  addMessage('poradce',text);
+  conversationHistory.push({role:'user',content:text});
+  setLoading(true);
+  const resp=await callAI(buildSystemPrompt(),conversationHistory);
+  setLoading(false);
+  addMessage('client',resp);
+  conversationHistory.push({role:'assistant',content:resp});
+  updateSuggestions();
+}
+
+async function requestFeedback(){
+  if(isLoading)return;
+  const msgs=conversationHistory.filter((_,i)=>i%2===0).map(m=>m.content).slice(-6);
+  if(!msgs.length){addSystemMessage('Nejdriv neco rekni klientovi.');return;}
+  setLoading(true);
+  const fb=await callAI(buildFeedbackPrompt(msgs),[{role:'user',content:'Dej zpetnou vazbu.'}]);
+  setLoading(false);
+  const sm=fb.match(/SCORE:\s*(\d+)/);
+  const score=sm?parseInt(sm[1]):null;
+  addFeedback(fb.replace(/SCORE:\s*\d+/,'').trim(),score);
+  if(score!==null){totalScore+=score;scoreCount++;document.getElementById('scoreVal').textContent=Math.round(totalScore/scoreCount);}
+}
+
+async function callAI(sys,msgs){
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:sys,messages:msgs})});
+    const d=await r.json();return d.content?.[0]?.text||'...';
+  }catch(e){return currentLang==='ru'?'Извините, ошибка.':'Omlouvam se, nastala chyba.';}
+}
+
+function nextPhase(){
+  if(currentPhase<PHASES.length-1){currentPhase++;updatePhaseUI();addSystemMessage(`Prechazis na: ${PHASES[currentPhase].name}`);updateSuggestions();}
+  else{addSystemMessage('Schuzka dokoncena! Pozadej o zaverecne hodnoceni.');requestFinalFeedback();}
+}
+function jumpToPhase(idx){currentPhase=idx;updatePhaseUI();addSystemMessage(`Preskok na: ${PHASES[idx].name}`);updateSuggestions();}
+function showHint(){addSystemMessage('Napoveda: '+PHASES[currentPhase].hint);}
+
+function updatePhaseUI(){
+  PHASES.forEach((_,i)=>{
+    const el=document.getElementById('phase-'+i);if(!el)return;
+    el.className='phase-item'+(i===currentPhase?' active':i<currentPhase?' done':'');
+    const num=el.querySelector('.phase-num');if(i<currentPhase)num.textContent='v';else num.textContent=String(i+1);
+  });
+  document.getElementById('phaseBadge').textContent=PHASES[currentPhase].name;
+  document.getElementById('hintBox').textContent=PHASES[currentPhase].hint;
+  const pct=Math.round((currentPhase/PHASES.length)*100);
+  document.getElementById('progressPct').textContent=pct+'%';
+  document.getElementById('progressFill').style.width=pct+'%';
+}
+
+function updateSuggestions(){
+  const sugs={
+    uvod:['Dobry den, jsem rad ze jsme se mohli potkat. Co bylo pro Vas nejdulezitejsi, proc jste souhlasil s nasi schuzkou?','Jak by dnesek mel probihnout, abyste odchazeli spokojeni?'],
+    zkusenosti:['Chtěl bych se Vas zeptat, jakou zkusenost mate s financnim poradenstvi?','Setkali jste se jiz nekdy s financnim poradcem? Jake mate zkusenosti?'],
+    vnimani:['Nas pristup je odlisny - na klienta pohlizime jako na celek...','Spolupracujeme s odborniky z ruznych oblasti - realitni makler, advokat, notar...'],
+    doporuceni:['Nase sluzba je pro Vas zcela zdarma. Platbu ocekavam formou doporuceni...','Budete mit cas v utery v 15:30 na nasi dalsi schuzku?'],
+  };
+  const phase=PHASES[currentPhase];
+  const container=document.getElementById('suggestions');
+  container.innerHTML=(sugs[phase.id]||[]).map(s=>`<button class="sug-btn" onclick="useSuggestion(this)">${s}</button>`).join('');
+}
+
+function useSuggestion(btn){document.getElementById('userInput').value=btn.textContent;document.getElementById('userInput').focus();}
+
+async function requestFinalFeedback(){
+  setLoading(true);
+  const all=conversationHistory.filter((_,i)=>i%2===0).map(m=>m.content);
+  const fb=await callAI('Jsi expert na financni poradenstvi 4fin. Dej zaverecne hodnoceni celeho A1 tréninku.',[{role:'user',content:`Poradce vedl schuzku A1. Jeho zpravy:\n${all.join('\n')}\n\nDej zaverecne hodnoceni. SCORE: [0-100]`}]);
+  setLoading(false);
+  const sm=fb.match(/SCORE:\s*(\d+)/);
+  const finalScore=sm?parseInt(sm[1]):null;
+  if(sm)document.getElementById('scoreVal').textContent=sm[1];
+  const finalText=fb.replace(/SCORE:\s*\d+/,'').trim();
+  addFeedback(finalText,finalScore,true);
+  poslatFeedbackEmailem(
+    document.title.replace('4fin | ',''),
+    selectedScenario?selectedScenario.name:'',
+    finalText, finalScore, []
+  );
+}
+
+function resetSession(){
+  conversationHistory=[];currentPhase=0;
+  document.getElementById('messages').innerHTML='';
+  document.getElementById('startScreen').style.display='flex';
+  document.getElementById('chatArea').style.display='none';
+  document.getElementById('inputSection').style.display='none';
+  document.getElementById('scoreVal').textContent='--';
+  renderPhases();
+}
+
+function addMessage(type,text){
+  const msgs=document.getElementById('messages');
+  const time=new Date().toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'});
+  const div=document.createElement('div');div.className=`msg ${type}`;
+  const avatar=type==='client'?'👤':type==='poradce'?'🧑':'';
+  if(type==='system'){div.innerHTML=`<div class="msg-bubble">${esc(text)}</div>`;}
+  else{div.innerHTML=`<div class="msg-avatar">${avatar}</div><div><div class="msg-bubble">${esc(text)}</div><div class="msg-time">${time}</div></div>`;}
+  msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
+}
+
+function addSystemMessage(t){addMessage('system',t);}
+
+function addFeedback(text,score,isFinal=false){
+  const msgs=document.getElementById('messages');
+  const sc=score>=75?'score-good':score>=50?'score-ok':'score-bad';
+  const sl=score>=75?'Skvele':score>=50?'Prumerne':'Slabe';
+  const lines=text.split('\n').filter(l=>l.trim());
+  const html=lines.map(l=>{
+    const icon=l.match(/^1\./)?'OK':l.match(/^2\./)?'!':l.match(/^3\./)?'T':'';
+    return icon?`<div class="feedback-row"><div class="feedback-icon">${icon}</div><div class="feedback-text">${esc(l.replace(/^\d+\.\s*/,''))}</div></div>`:`<div class="feedback-text" style="margin-bottom:3px;">${esc(l)}</div>`;
+  }).join('');
+  const div=document.createElement('div');div.className='msg feedback';
+  div.innerHTML=`<div class="feedback-bubble"><div class="feedback-header">AI Zpetna vazba — ${isFinal?'Zaverecne hodnoceni':PHASES[currentPhase].name}</div>${html}${score!==null?`<div><span class="feedback-score ${sc}">${sl}: ${score}/100</span></div>`:''}</div>`;
+  msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
+}
+
+function setLoading(state){
+  isLoading=state;
+  const btn=document.getElementById('sendBtn');if(btn)btn.disabled=state;
+  const msgs=document.getElementById('messages');
+  const ex=document.getElementById('typingIndicator');
+  if(state&&!ex){const d=document.createElement('div');d.className='msg client';d.id='typingIndicator';d.innerHTML='<div class="msg-avatar">👤</div><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>';msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;}
+  else if(!state&&ex){ex.remove();}
+}
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
+
+async function poslatFeedbackEmailem(trenazer, scenar, feedback, score, vsechnyFb) {
+  try {
+    await fetch("https://script.google.com/macros/s/AKfycbyqnJsAlmzOAntypivM5oiLt8twpNJkJrUaK4D-rkvQPzFC_btwUrC8ivasYrnWbdsM6g/exec", {
+      method: "POST",
+      headers: {"Content-Type": "text/plain"},
+      body: JSON.stringify({
+        action: "poslatFeedbackEmail",
+        trenazer: trenazer,
+        scenar: scenar || "",
+        feedback: feedback || "",
+        score: score != null ? score : null,
+        vsechnyFb: vsechnyFb || []
+      })
+    });
+  } catch(e) { console.log("Email feedback selhal:", e); }
+}
+
+</script>
+</body>
+</html>

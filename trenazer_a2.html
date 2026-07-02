@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>4fin | Trenažér A2 — Finanční analýza</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  :root{
+    --bg:#0d0f14;--surface:#151820;--surface2:#1c2030;--surface3:#232838;
+    --border:#252a3a;--accent:#c8a96e;--accent2:#e8c98e;
+    --green:#4caf82;--red:#e05252;--yellow:#e0a832;--blue:#5b8dee;--purple:#9b5dee;
+    --text:#e8eaf0;--text2:#8892a4;--text3:#555f72;
+    --radius:10px;--mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+  .logo{font-family:var(--mono);font-size:13px;color:var(--accent);letter-spacing:0.08em;}
+  .logo span{color:var(--text3);}
+  .back-btn{font-size:13px;color:var(--text2);text-decoration:none;}
+  .shell{max-width:900px;margin:0 auto;padding:28px 20px 80px;display:grid;grid-template-columns:280px 1fr;gap:20px;}
+  @media(max-width:700px){.shell{grid-template-columns:1fr;}}
+
+  /* SIDEBAR */
+  .sidebar{display:flex;flex-direction:column;gap:12px;}
+  .sidebar-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
+  .sidebar-title{font-size:10px;font-weight:700;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;}
+  .phase-list{display:flex;flex-direction:column;gap:6px;}
+  .phase-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:7px;cursor:pointer;transition:background 0.15s;}
+  .phase-item:hover{background:var(--surface2);}
+  .phase-item.active{background:rgba(200,169,110,0.1);border:1px solid rgba(200,169,110,0.3);}
+  .phase-item.done{opacity:0.6;}
+  .phase-num{width:22px;height:22px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;font-family:var(--mono);flex-shrink:0;color:var(--text3);}
+  .phase-item.active .phase-num{background:var(--accent);color:var(--bg);border-color:var(--accent);}
+  .phase-item.done .phase-num{background:var(--green);color:var(--bg);border-color:var(--green);}
+  .phase-name{font-size:12px;font-weight:500;color:var(--text2);}
+  .phase-item.active .phase-name{color:var(--accent);}
+
+  .progress-wrap{margin-bottom:4px;}
+  .progress-label{font-size:11px;color:var(--text3);margin-bottom:6px;display:flex;justify-content:space-between;}
+  .progress-bar{height:4px;background:var(--border);border-radius:2px;}
+  .progress-fill{height:4px;background:var(--accent);border-radius:2px;transition:width 0.5s;}
+
+  .lang-btns{display:flex;gap:6px;}
+  .lang-btn{flex:1;padding:7px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;text-align:center;}
+  .lang-btn.active{background:var(--accent);color:var(--bg);border-color:var(--accent);}
+
+  .score-box{text-align:center;}
+  .score-val{font-size:32px;font-weight:700;font-family:var(--mono);color:var(--accent);}
+  .score-label{font-size:11px;color:var(--text3);margin-top:2px;}
+
+  /* MAIN CHAT */
+  .main{display:flex;flex-direction:column;gap:0;}
+  .chat-area{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;height:560px;}
+  .chat-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;}
+  .client-avatar{width:36px;height:36px;border-radius:50%;background:rgba(91,141,238,0.15);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+  .client-info{flex:1;}
+  .client-name{font-size:14px;font-weight:600;}
+  .client-status{font-size:11px;color:var(--green);display:flex;align-items:center;gap:4px;}
+  .client-status::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;}
+  .phase-badge{font-size:10px;font-weight:600;padding:3px 9px;border-radius:99px;background:rgba(200,169,110,0.15);color:var(--accent);font-family:var(--mono);}
+
+  .messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;}
+  .messages::-webkit-scrollbar{width:4px;}
+  .messages::-webkit-scrollbar-track{background:transparent;}
+  .messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+  .msg{display:flex;gap:10px;max-width:85%;}
+  .msg.client{align-self:flex-start;}
+  .msg.poradce{align-self:flex-end;flex-direction:row-reverse;}
+  .msg.system{align-self:center;max-width:100%;}
+  .msg-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;margin-top:2px;}
+  .msg.client .msg-avatar{background:rgba(91,141,238,0.15);}
+  .msg.poradce .msg-avatar{background:rgba(200,169,110,0.15);}
+  .msg-bubble{padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.5;}
+  .msg.client .msg-bubble{background:var(--surface2);border:1px solid var(--border);border-top-left-radius:3px;}
+  .msg.poradce .msg-bubble{background:rgba(200,169,110,0.12);border:1px solid rgba(200,169,110,0.2);border-top-right-radius:3px;}
+  .msg.system .msg-bubble{background:var(--surface2);border:1px solid var(--border);border-radius:8px;width:100%;font-size:12px;color:var(--text2);}
+  .msg-time{font-size:10px;color:var(--text3);margin-top:4px;font-family:var(--mono);}
+  .msg.poradce .msg-time{text-align:right;}
+
+  /* FEEDBACK BUBBLE */
+  .msg.feedback{align-self:stretch;max-width:100%;}
+  .feedback-bubble{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;width:100%;}
+  .feedback-header{font-size:10px;font-weight:700;color:var(--accent);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+  .feedback-row{display:flex;gap:8px;margin-bottom:6px;}
+  .feedback-icon{width:18px;flex-shrink:0;margin-top:1px;}
+  .feedback-text{font-size:12px;color:var(--text2);line-height:1.5;}
+  .feedback-score{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;margin-top:8px;}
+  .score-good{background:rgba(76,175,130,0.15);color:var(--green);}
+  .score-ok{background:rgba(224,168,50,0.15);color:var(--yellow);}
+  .score-bad{background:rgba(224,82,82,0.15);color:var(--red);}
+
+  /* TYPING INDICATOR */
+  .typing{display:flex;gap:4px;align-items:center;padding:12px 14px;}
+  .typing span{width:6px;height:6px;border-radius:50%;background:var(--text3);animation:typing 1.2s infinite;}
+  .typing span:nth-child(2){animation-delay:0.2s;}
+  .typing span:nth-child(3){animation-delay:0.4s;}
+  @keyframes typing{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-6px);}}
+
+  /* INPUT */
+  .input-area{padding:14px;border-top:1px solid var(--border);}
+  .input-wrap{display:flex;gap:10px;align-items:flex-end;}
+  .input-field{flex:1;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;padding:10px 14px;outline:none;resize:none;min-height:44px;max-height:120px;line-height:1.5;transition:border-color 0.15s;}
+  .input-field:focus{border-color:var(--accent);}
+  .send-btn{background:var(--accent);border:none;border-radius:10px;color:var(--bg);width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:18px;transition:background 0.15s;}
+  .send-btn:hover{background:var(--accent2);}
+  .send-btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+  /* SUGGESTIONS */
+  .suggestions{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+  .sug-btn{font-size:11px;padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;transition:all 0.15s;}
+  .sug-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+  /* CONTROLS */
+  .controls{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+  .ctrl-btn{font-size:12px;font-weight:600;padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;transition:all 0.15s;}
+  .ctrl-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .ctrl-btn.primary{background:var(--accent);color:var(--bg);border-color:var(--accent);}
+  .ctrl-btn.primary:hover{background:var(--accent2);}
+  .ctrl-btn.danger{background:rgba(224,82,82,0.1);color:var(--red);border-color:rgba(224,82,82,0.3);}
+
+  /* START SCREEN */
+  #startScreen{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 20px;text-align:center;gap:20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);}
+  .start-icon{font-size:48px;}
+  .start-title{font-size:22px;font-weight:700;}
+  .start-sub{font-size:14px;color:var(--text2);max-width:420px;line-height:1.6;}
+  .scenario-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:460px;}
+  .scenario-btn{background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:14px;cursor:pointer;transition:all 0.15s;text-align:left;}
+  .scenario-btn:hover{border-color:var(--accent);}
+  .scenario-btn.selected{border-color:var(--accent);background:rgba(200,169,110,0.08);}
+  .scenario-title{font-size:13px;font-weight:600;margin-bottom:3px;}
+  .scenario-desc{font-size:11px;color:var(--text3);}
+
+  .loading-spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+<header>
+  <a class="back-btn" href="index.html">← 4fin OS</a>
+  <div class="logo">4fin <span>//</span> Trenažér A2</div>
+  <div id="clock" style="font-family:var(--mono);font-size:12px;color:var(--text3);"></div>
+</header>
+
+<div class="shell">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-card">
+      <div class="sidebar-title">Průběh schůzky</div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>Dokončeno</span><span id="progressPct">0%</span></div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      </div>
+      <div class="phase-list" id="phaseList"></div>
+    </div>
+    <div class="sidebar-card">
+      <div class="sidebar-title">Jazyk klienta</div>
+      <div class="lang-btns">
+        <button class="lang-btn active" id="langCZ" onclick="setLang('cz')">🇨🇿 Česky</button>
+        <button class="lang-btn" id="langRU" onclick="setLang('ru')">🇷🇺 Русский</button>
+      </div>
+    </div>
+    <div class="sidebar-card">
+      <div class="sidebar-title">Skóre</div>
+      <div class="score-box">
+        <div class="score-val" id="scoreVal">—</div>
+        <div class="score-label">bodů ze 100</div>
+      </div>
+    </div>
+    <div class="sidebar-card">
+      <div class="sidebar-title">Nápověda — aktuální fáze</div>
+      <div id="hintBox" style="font-size:12px;color:var(--text2);line-height:1.6;">Zahaj konzultaci úvodem a vysvětli klientovi účel schůzky.</div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <!-- START SCREEN -->
+    <div id="startScreen">
+      <div class="start-icon">🎯</div>
+      <div class="start-title">Trenažér A2 — Finanční analýza</div>
+      <div class="start-sub">Natrénuj si vedení celé finanční analýzy A2. AI hraje reálného klienta, ty vedeš schůzku. Po každé části dostaneš zpětnou vazbu.</div>
+      <div style="font-size:13px;font-weight:600;color:var(--text2);margin-top:4px;">Vyber typ klienta:</div>
+      <div class="scenario-grid" id="scenarioGrid"></div>
+      <button class="ctrl-btn primary" id="startBtn" onclick="startSession()" style="min-width:200px;padding:12px 24px;font-size:14px;margin-top:8px;">Zahájit trénink →</button>
+    </div>
+
+    <!-- CHAT -->
+    <div id="chatArea" class="chat-area" style="display:none;">
+      <div class="chat-header">
+        <div class="client-avatar">👤</div>
+        <div class="client-info">
+          <div class="client-name" id="clientName">Klient</div>
+          <div class="client-status" id="clientStatus">připraven</div>
+        </div>
+        <div class="phase-badge" id="phaseBadge">Úvod</div>
+      </div>
+      <div class="messages" id="messages"></div>
+    </div>
+
+    <div id="inputSection" style="display:none;">
+      <div class="suggestions" id="suggestions"></div>
+      <div class="input-area" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);border-top-left-radius:0;border-top-right-radius:0;border-top:none;">
+        <div class="input-wrap">
+          <textarea class="input-field" id="userInput" placeholder="Napiš co říkáš klientovi..." rows="1"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"
+            oninput="autoResize(this)"></textarea>
+          <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="ctrl-btn" onclick="requestFeedback()">💬 Zpětná vazba</button>
+        <button class="ctrl-btn" onclick="nextPhase()">⏭ Přejít na další fázi</button>
+        <button class="ctrl-btn" onclick="showHint()">💡 Nápověda</button>
+        <button class="ctrl-btn danger" onclick="resetSession()">↩ Začít znovu</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SCRIPT_URL = 'https://api.anthropic.com/v1/messages';
+
+const PHASES = [
+  { id:'uvod',     name:'Úvod analýzy',        hint:'Představ účel schůzky. Zeptej se na souhlas. Vysvětli, že budete mluvit o tématech spojených s penězi.' },
+  { id:'rezervy',  name:'Tvorba rezerv',        hint:'Vysvětli filozofii práce s penězi: běžný účet (1M výdajů), spořící účet (5M výdajů), dlouhodobé rezervy (7%+). Použij příklad 50 000 Kč.' },
+  { id:'bydleni',  name:'Bydlení',              hint:'Zjisti aktuální situaci, spokojenost, hodnotu nemovitosti, hypotéku. Nabídni správu hypotéky a revitalizaci.' },
+  { id:'rodina',   name:'Rodina & děti',        hint:'Kolik členů rodiny, plány na děti. Náklady na vzdělání, startup do života.' },
+  { id:'vozovy',   name:'Vozový park',          hint:'Čím jezdí, stáří vozu, plány na obnovu, způsob financování.' },
+  { id:'prijmy',   name:'Analýza příjmů/výdajů', hint:'Postupně projdi výdaje (zbytné/nutné), pak příjmy. Cashflow.' },
+  { id:'zajisteni',name:'Zajištění životního standardu', hint:'5 rizik: ztráta zaměstnání, pracovní neschopnost, smrt živitele, invalidita, vážné úrazy. Nech klienta ohodnotit 1-5.' },
+  { id:'renta',    name:'Soukromá renta',       hint:'V kolik letech chce přestat pracovat? Kolik chce dostávat? Jak dlouho? Výpočet potřebné renty.' },
+];
+
+const SCENARIOS = [
+  { id:'zamestnanec_byt', name:'Zaměstnanec s bytem', desc:'Ženatý, hypotéka, plánuje rodinu', lang:'cz',
+    profile:'Jmenuješ se Pavel Novák, 32 let, zaměstnanec IT firmy, příjem 45 000 Kč čistého. Ženatý, manželka Petra, zatím bez dětí ale plánují. Mají byt 3+kk na hypotéce (2,2 mil Kč zbývá, sazba 3,2%, fixace za 2 roky). Byt koupili za 4 mil, nyní odhadují 5,5 mil. Jezdí Škodou Octavia 4 roky starou. Rezervy: ~200 tis Kč na spořícím účtu. Na důchod nic nespoří.' },
+  { id:'osvc_najem', name:'OSVČ v pronájmu', desc:'Podnikatel, uvažuje o vlastním bydlení', lang:'cz',
+    profile:'Jmenuješ se Martin Kovář, 38 let, OSVČ (grafický designér), příjem cca 60 000 Kč čistého (ale přiznaný 30 000 Kč). Svobodný, bydlí v pronájmu (18 000 Kč/měs). Uvažuje o koupi bytu do 2 let za cca 5 mil Kč. Auto Volkswagen Golf 6 let staré. Rezervy: 300 tis Kč na běžném účtu. Nemá žádné pojištění.' },
+  { id:'rusky_zamestnanec', name:'Русскоязычный клиент', desc:'Иностранец, аренда, ипотека', lang:'ru',
+    profile:'Твоё имя — Николай Петров, 35 лет, работаешь в ИТ, зарплата 50 000 крон чистыми. Женат, жена Анна, двое детей (7 и 10 лет). Живёте в арендованной квартире (20 000 крон/мес). Хотите через 2 года купить квартиру за 6 млн крон. Машина Toyota Corolla, 5 лет. Резервы: 150 000 крон на текущем счёте. Ипотеки нет, кредитов нет.' },
+  { id:'para_dum', name:'Pár — stavba domu', desc:'Plánují stavbu rodinného domu', lang:'cz',
+    profile:'Jmenuješ se Tomáš Blaha, 40 let, zaměstnanec výrobní firmy, příjem 55 000 Kč. Manželka Jana 38 let, učitelka, příjem 32 000 Kč. Dvě děti (12 a 14 let). Mají byt (prodají za ~3 mil Kč). Plánují stavět dům: pozemek 2 mil Kč, stavba 5 mil Kč. Mají našetřeno 1,5 mil Kč a stavební spoření 500 tis Kč. Octavia Combi 3 roky stará.' },
+];
+
+let sessionActive = false;
+let currentLang = 'cz';
+let currentPhase = 0;
+let selectedScenario = null;
+let conversationHistory = [];
+let totalScore = 0;
+let scoreCount = 0;
+let isLoading = false;
+
+// INIT
+document.addEventListener('DOMContentLoaded', () => {
+  updateClock();
+  setInterval(updateClock, 30000);
+  renderPhases();
+  renderScenarios();
+});
+
+function updateClock(){
+  const n = new Date();
+  const el = document.getElementById('clock');
+  if(el) el.textContent = String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+}
+
+function renderPhases(){
+  const list = document.getElementById('phaseList');
+  list.innerHTML = PHASES.map((p,i) => `
+    <div class="phase-item ${i===0?'active':''}" id="phase-${i}" onclick="jumpToPhase(${i})">
+      <div class="phase-num">${i+1}</div>
+      <div class="phase-name">${p.name}</div>
+    </div>`).join('');
+}
+
+function renderScenarios(){
+  const grid = document.getElementById('scenarioGrid');
+  grid.innerHTML = SCENARIOS.map(s => `
+    <button class="scenario-btn" id="sc-${s.id}" onclick="selectScenario('${s.id}')">
+      <div class="scenario-title">${s.name}</div>
+      <div class="scenario-desc">${s.desc}</div>
+    </button>`).join('');
+  // Default select first
+  selectScenario(SCENARIOS[0].id);
+}
+
+function selectScenario(id){
+  selectedScenario = SCENARIOS.find(s => s.id === id);
+  document.querySelectorAll('.scenario-btn').forEach(b => b.classList.remove('selected'));
+  const btn = document.getElementById('sc-'+id);
+  if(btn) btn.classList.add('selected');
+  // Set language
+  setLang(selectedScenario.lang, false);
+}
+
+function setLang(lang, updateScenario=true){
+  currentLang = lang;
+  document.getElementById('langCZ').classList.toggle('active', lang==='cz');
+  document.getElementById('langRU').classList.toggle('active', lang==='ru');
+  if(updateScenario && selectedScenario){
+    const matching = SCENARIOS.find(s => s.lang === lang);
+    if(matching) selectScenario(matching.id);
+  }
+}
+
+async function startSession(){
+  if(!selectedScenario) return;
+  sessionActive = true;
+  currentPhase = 0;
+  conversationHistory = [];
+  totalScore = 0; scoreCount = 0;
+
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('chatArea').style.display = 'flex';
+  document.getElementById('inputSection').style.display = 'block';
+
+  const clientNameEl = document.getElementById('clientName');
+  const name = selectedScenario.profile.match(/Jmenuješ se ([^,]+)|Твоё имя — ([^,]+)/);
+  clientNameEl.textContent = name ? (name[1]||name[2]) : 'Klient';
+
+  document.getElementById('scoreVal').textContent = '—';
+
+  updatePhaseUI();
+  addSystemMessage(currentLang === 'cz'
+    ? '🎯 Trénink zahájen. Ty jsi poradce, klient čeká. Zaháj konzultaci!'
+    : '🎯 Тренировка начата. Ты консультант, клиент ждёт. Начни консультацию!');
+
+  // Klient se představí sám
+  setLoading(true);
+  const intro = await callAI(buildSystemPrompt(), [
+    { role:'user', content: currentLang === 'cz'
+        ? 'Klient právě přišel na schůzku. Pozdrav ho jako klient (krátce, 1-2 věty).'
+        : 'Клиент только что пришёл на встречу. Поприветствуй его как клиент (коротко, 1-2 предложения).' }
+  ]);
+  setLoading(false);
+  addMessage('client', intro);
+  updateSuggestions();
+}
+
+function buildSystemPrompt(){
+  const isRu = currentLang === 'ru';
+  const phaseName = PHASES[currentPhase].name;
+  return `${isRu ? 'Ты играешь роль клиента на встрече с финансовым консультантом 4fin.' : 'Hraješ roli klienta na schůzce s finančním poradcem 4fin.'}
+
+PROFIL KLIENTA:
+${selectedScenario.profile}
+
+AKTUÁLNÍ FÁZE SCHŮZKY: ${phaseName}
+
+PRAVIDLA:
+${isRu ? `
+- Mluv POUZE jako klient. NIKDY nedávej rady poradci.
+- Odpovídej realisticky podle profilu. Kratší odpovědi (2-4 věty).
+- Pokud poradce mluví o tématu mimo aktuální fázi, jemně ho vrať zpět.
+- Pokud poradce udělá chybu (zapomene na něco důležitého, přeskočí krok), reaguj jako reálný zmatený klient.
+- Občas polož doplňující otázku klienta.
+- Mluv RUSKY.
+` : `
+- Mluv POUZE jako klient. NIKDY nedávej rady poradci.
+- Odpovídej realisticky podle profilu. Kratší odpovědi (2-4 věty).
+- Pokud poradce mluví o tématu mimo aktuální fázi, jemně ho vrať zpět.
+- Pokud poradce udělá chybu (zapomene na něco důležitého, přeskočí krok), reaguj jako reálný zmatený klient.
+- Občas polož doplňující otázku ze strany klienta.
+- Mluv ČESKY.
+`}`;
+}
+
+function buildFeedbackPrompt(userMessages){
+  const isRu = currentLang === 'ru';
+  const phase = PHASES[currentPhase];
+  return `${isRu ? 'Jsi expert na finanční konzultace 4fin.' : 'Jsi expert na finanční konzultace 4fin.'}
+
+Fáze konzultace: ${phase.name}
+Nápověda k fázi: ${phase.hint}
+
+Poradce řekl toto (v pořadí):
+${userMessages.map((m,i) => `${i+1}. "${m}"`).join('\n')}
+
+Dej strukturovanou zpětnou vazbu v češtině (bez ohledu na jazyk klienta):
+1. Co bylo dobře (konkrétně, co z fáze zvládl)
+2. Co chybělo nebo bylo slabé (konkrétně, co z manuálu A2 přeskočil)
+3. Jeden konkrétní tip na zlepšení
+
+Pak ohodnoť tuto fázi bodově 0-100 a odpověz PŘESNĚ takto na konci:
+SCORE: [číslo]
+
+Buď konkrétní, ne obecný. Max 5-6 vět celkem.`;
+}
+
+async function sendMessage(){
+  const input = document.getElementById('userInput');
+  const text = input.value.trim();
+  if(!text || isLoading) return;
+  input.value = '';
+  input.style.height = 'auto';
+
+  addMessage('poradce', text);
+  conversationHistory.push({ role:'user', content: text });
+
+  setLoading(true);
+  const response = await callAI(buildSystemPrompt(), conversationHistory);
+  setLoading(false);
+
+  addMessage('client', response);
+  conversationHistory.push({ role:'assistant', content: response });
+  updateSuggestions();
+}
+
+async function requestFeedback(){
+  if(isLoading) return;
+  const poradceMessages = conversationHistory
+    .filter((_,i) => i % 2 === 0)
+    .map(m => m.content)
+    .slice(-6); // posledních 6 zpráv poradce
+
+  if(poradceMessages.length === 0){
+    addSystemMessage('Nejdřív něco řekni klientovi, pak požádej o zpětnou vazbu.');
+    return;
+  }
+
+  setLoading(true);
+  const feedback = await callAI(buildFeedbackPrompt(poradceMessages), [
+    { role:'user', content:'Dej zpětnou vazbu.' }
+  ]);
+  setLoading(false);
+
+  // Parsuj score
+  const scoreMatch = feedback.match(/SCORE:\s*(\d+)/);
+  const score = scoreMatch ? parseInt(scoreMatch[1]) : null;
+  const feedbackText = feedback.replace(/SCORE:\s*\d+/, '').trim();
+
+  addFeedback(feedbackText, score);
+
+  if(score !== null){
+    totalScore += score;
+    scoreCount++;
+    document.getElementById('scoreVal').textContent = Math.round(totalScore/scoreCount);
+  }
+}
+
+async function callAI(systemPrompt, messages){
+  try{
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body: JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:1000,
+        system: systemPrompt,
+        messages: messages
+      })
+    });
+    const data = await res.json();
+    return data.content?.[0]?.text || '...';
+  }catch(e){
+    return currentLang === 'ru' ? 'Извините, произошла ошибка.' : 'Omlouvám se, nastala chyba.';
+  }
+}
+
+function nextPhase(){
+  if(currentPhase < PHASES.length - 1){
+    currentPhase++;
+    updatePhaseUI();
+    const phase = PHASES[currentPhase];
+    addSystemMessage(`⏭ Přecházíš na fázi: ${phase.name}`);
+    document.getElementById('hintBox').textContent = phase.hint;
+    updateSuggestions();
+  } else {
+    addSystemMessage('🏁 Konzultace dokončena! Požádej o závěrečné hodnocení.');
+    requestFinalFeedback();
+  }
+}
+
+function jumpToPhase(idx){
+  currentPhase = idx;
+  updatePhaseUI();
+  addSystemMessage(`↩ Přeskočeno na: ${PHASES[idx].name}`);
+  document.getElementById('hintBox').textContent = PHASES[idx].hint;
+  updateSuggestions();
+}
+
+function updatePhaseUI(){
+  PHASES.forEach((_,i) => {
+    const el = document.getElementById('phase-'+i);
+    if(!el) return;
+    el.className = 'phase-item' + (i === currentPhase ? ' active' : i < currentPhase ? ' done' : '');
+    const num = el.querySelector('.phase-num');
+    if(i < currentPhase) num.textContent = '✓';
+    else num.textContent = String(i+1);
+  });
+  document.getElementById('phaseBadge').textContent = PHASES[currentPhase].name;
+  document.getElementById('hintBox').textContent = PHASES[currentPhase].hint;
+  const pct = Math.round((currentPhase / PHASES.length) * 100);
+  document.getElementById('progressPct').textContent = pct + '%';
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function updateSuggestions(){
+  const suggestions = {
+    uvod: ['Dobrý den, rád Vás vítám. Účelem dnešní schůzky...','Souhlasíte, že začneme?'],
+    rezervy: ['Jak jste spokojený se svou mírou spořivosti?','Víte, jaké jsou dva základní nedostatky běžného účtu?'],
+    bydleni: ['Jak jste spokojený se svým současným bydlením?','Tušíte, jaká je aktuální hodnota nemovitosti?'],
+    rodina: ['Kolik členů má Vaše rodina?','Plánujete v budoucnu rozšíření rodiny?'],
+    vozovy: ['Čím jezdíte a jak starý je Váš vůz?','Jak dlouho ještě plánujete tento vůz využívat?'],
+    prijmy: ['Pojďme projít Vaše výdaje. Začneme bydlením...','Jaký je Váš čistý měsíční příjem?'],
+    zajisteni: ['Co by se muselo stát, aby Váš příjem klesl pod hranici výdajů?','Zkuste mi ohodnotit rizika od 1 do 5...'],
+    renta: ['V kolik letech byste ideálně chtěl přestat pracovat?','Jakou částku byste chtěl měsíčně pobírat v důchodu?'],
+  };
+  const phase = PHASES[currentPhase];
+  const sugs = suggestions[phase.id] || [];
+  const container = document.getElementById('suggestions');
+  container.innerHTML = sugs.map(s =>
+    `<button class="sug-btn" onclick="useSuggestion(this)">${s}</button>`
+  ).join('');
+}
+
+function useSuggestion(btn){
+  document.getElementById('userInput').value = btn.textContent;
+  document.getElementById('userInput').focus();
+}
+
+function showHint(){
+  addSystemMessage('💡 ' + PHASES[currentPhase].hint);
+}
+
+async function requestFinalFeedback(){
+  setLoading(true);
+  const allPoradce = conversationHistory.filter((_,i) => i%2===0).map(m=>m.content);
+  const finalFeedback = await callAI(
+    'Jsi expert na finanční konzultace 4fin. Dej závěrečné hodnocení celé konzultace A2.',
+    [{role:'user', content:`Poradce vedl konzultaci A2. Zde jsou jeho zprávy:\n${allPoradce.join('\n')}\n\nDej závěrečné hodnocení (co bylo nejlepší, co nejslabší, celkové doporučení pro další trénink). Na konci SCORE: [0-100]`}]
+  );
+  setLoading(false);
+  const scoreMatch = finalFeedback.match(/SCORE:\s*(\d+)/);
+  const finalScore2 = scoreMatch ? parseInt(scoreMatch[1]) : null;
+  if(scoreMatch) document.getElementById('scoreVal').textContent = scoreMatch[1];
+  const finalText2 = finalFeedback.replace(/SCORE:\s*\d+/,'').trim();
+  addFeedback(finalText2, finalScore2, true);
+  poslatFeedbackEmailem(
+    'Trenazer A2 - Financni analyza',
+    selectedScenario ? selectedScenario.name : '',
+    finalText2, finalScore2, []
+  );
+}
+
+function resetSession(){
+  sessionActive = false;
+  currentPhase = 0;
+  conversationHistory = [];
+  document.getElementById('messages').innerHTML = '';
+  document.getElementById('startScreen').style.display = 'flex';
+  document.getElementById('chatArea').style.display = 'none';
+  document.getElementById('inputSection').style.display = 'none';
+  document.getElementById('scoreVal').textContent = '—';
+  renderPhases();
+}
+
+// UI HELPERS
+function addMessage(type, text){
+  const msgs = document.getElementById('messages');
+  const time = new Date().toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'});
+  const avatar = type === 'client' ? '👤' : type === 'poradce' ? '🧑‍💼' : '';
+  const div = document.createElement('div');
+  div.className = `msg ${type}`;
+  if(type === 'system'){
+    div.innerHTML = `<div class="msg-bubble">${esc(text)}</div>`;
+  } else {
+    div.innerHTML = `
+      <div class="msg-avatar">${avatar}</div>
+      <div>
+        <div class="msg-bubble">${esc(text)}</div>
+        <div class="msg-time">${time}</div>
+      </div>`;
+  }
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function addSystemMessage(text){
+  addMessage('system', text);
+}
+
+function addFeedback(text, score, isFinal=false){
+  const msgs = document.getElementById('messages');
+  const scoreCls = score >= 75 ? 'score-good' : score >= 50 ? 'score-ok' : 'score-bad';
+  const scoreLabel = score >= 75 ? '✅ Skvělé' : score >= 50 ? '⚠️ Průměrné' : '❌ Slabé';
+
+  const lines = text.split('\n').filter(l => l.trim());
+  const htmlLines = lines.map(l => {
+    const icon = l.match(/^1\./) ? '✅' : l.match(/^2\./) ? '⚠️' : l.match(/^3\./) ? '💡' : '';
+    return icon
+      ? `<div class="feedback-row"><div class="feedback-icon">${icon}</div><div class="feedback-text">${esc(l.replace(/^\d+\.\s*/,''))}</div></div>`
+      : `<div class="feedback-text" style="margin-bottom:4px;">${esc(l)}</div>`;
+  }).join('');
+
+  const div = document.createElement('div');
+  div.className = 'msg feedback';
+  div.innerHTML = `<div class="feedback-bubble">
+    <div class="feedback-header">🤖 ${isFinal ? 'Závěrečné hodnocení' : 'Zpětná vazba — '+PHASES[currentPhase].name}</div>
+    ${htmlLines}
+    ${score !== null ? `<div><span class="feedback-score ${scoreCls}">${scoreLabel}: ${score}/100</span></div>` : ''}
+  </div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function setLoading(state){
+  isLoading = state;
+  const btn = document.getElementById('sendBtn');
+  if(btn) btn.disabled = state;
+  const msgs = document.getElementById('messages');
+  const existingTyping = document.getElementById('typingIndicator');
+  if(state && !existingTyping){
+    const div = document.createElement('div');
+    div.className = 'msg client';
+    div.id = 'typingIndicator';
+    div.innerHTML = '<div class="msg-avatar">👤</div><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>';
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  } else if(!state && existingTyping){
+    existingTyping.remove();
+  }
+}
+
+function autoResize(el){
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
+
+async function poslatFeedbackEmailem(trenazer, scenar, feedback, score, vsechnyFb) {
+  try {
+    await fetch("https://script.google.com/macros/s/AKfycbyqnJsAlmzOAntypivM5oiLt8twpNJkJrUaK4D-rkvQPzFC_btwUrC8ivasYrnWbdsM6g/exec", {
+      method: "POST",
+      headers: {"Content-Type": "text/plain"},
+      body: JSON.stringify({
+        action: "poslatFeedbackEmail",
+        trenazer: trenazer,
+        scenar: scenar || "",
+        feedback: feedback || "",
+        score: score != null ? score : null,
+        vsechnyFb: vsechnyFb || []
+      })
+    });
+  } catch(e) { console.log("Email feedback selhal:", e); }
+}
+
+</script>
+</body>
+</html>
