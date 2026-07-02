@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>4fin OS | Podklady</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  :root{--bg:#0d0f14;--surface:#151820;--surface2:#1c2030;--border:#252a3a;--accent:#c8a96e;--accent2:#e8c98e;--green:#4caf82;--red:#e05252;--yellow:#e0a832;--blue:#5b8dee;--text:#e8eaf0;--text2:#8892a4;--text3:#555f72;--radius:10px;--mono:'JetBrains Mono',monospace;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;padding-bottom:60px;}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+  .logo{font-family:var(--mono);font-size:13px;color:var(--accent);letter-spacing:0.08em;}
+  .logo span{color:var(--text3);}
+  .back-btn{font-size:13px;color:var(--text2);text-decoration:none;}
+  .shell{max-width:720px;margin:0 auto;padding:28px 20px 80px;}
+  .page-title{font-size:22px;font-weight:700;margin-bottom:4px;}
+  .page-sub{font-size:13px;color:var(--text2);margin-bottom:28px;}
+  .section-label{font-size:10px;font-weight:700;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;margin-top:24px;}
+  .doc-grid{display:flex;flex-direction:column;gap:10px;}
+  .doc-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;gap:14px;transition:border-color 0.15s;}
+  .doc-card:hover{border-color:var(--accent);}
+  .doc-icon{font-size:24px;flex-shrink:0;width:40px;text-align:center;}
+  .doc-info{flex:1;min-width:0;}
+  .doc-name{font-size:14px;font-weight:600;margin-bottom:3px;}
+  .doc-desc{font-size:12px;color:var(--text2);}
+  .doc-ukoly{font-size:11px;color:var(--text3);margin-top:4px;}
+  .doc-actions{display:flex;gap:8px;flex-shrink:0;}
+  .btn-open{background:var(--accent);color:var(--bg);border:none;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
+  .btn-open:hover{background:var(--accent2);}
+  .btn-copy{background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:7px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;}
+  .btn-copy:hover{border-color:var(--accent);color:var(--accent);}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--surface2);border:1px solid var(--accent);color:var(--text);padding:12px 20px;border-radius:8px;font-size:13px;z-index:300;transition:transform 0.25s;display:flex;align-items:center;gap:8px;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+  .info-box{background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:14px 16px;font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:20px;}
+  .info-box strong{color:var(--accent);}
+  .lang-badge{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600;margin-left:6px;}
+  .lang-cz{background:rgba(76,175,130,0.15);color:var(--green);}
+  .lang-ru{background:rgba(91,141,238,0.15);color:var(--blue);}
+  .lang-en{background:rgba(224,168,50,0.15);color:var(--yellow);}
+</style>
+</head>
+<body>
+<header>
+  <a class="back-btn" href="index.html">← 4fin OS</a>
+  <div class="logo">4fin <span>//</span> Podklady</div>
+  <div id="clock" style="font-family:var(--mono);font-size:12px;color:var(--text3);"></div>
+</header>
+
+<div class="shell">
+  <div class="page-title">Podklady & Dokumenty</div>
+  <div class="page-sub">Všechny interní materiály na jednom místě</div>
+
+  <div class="info-box">
+    Dokumenty jsou uloženy v repozitáři <strong>4fin OS na GitHubu</strong>. Kliknutím na <strong>Otevřít</strong> zobrazíš dokument. Odkaz můžeš zkopírovat a poslat nováčkovi nebo konzultantovi — funguje na jakémkoliv zařízení bez přihlášení.
+  </div>
+
+  <div class="section-label">Poradenský proces</div>
+  <div class="doc-grid">
+    <div class="doc-card">
+      <div class="doc-icon">📋</div>
+      <div class="doc-info">
+        <div class="doc-name">Manuál A1 — Představení společnosti <span class="lang-badge lang-cz">CZ</span></div>
+        <div class="doc-desc">Poradenský manuál pro první schůzku A1</div>
+        <div class="doc-ukoly">Používá se při úkolech: Vysvětlení A1, A1 – samostudium, Představení společnosti</div>
+      </div>
+      <div class="doc-actions">
+        <a class="btn-open" href="https://martin-eisenreich.github.io/4fin-os/MANUAL%20A1.pdf" target="_blank">⬆ Otevřít</a>
+        <button class="btn-copy" onclick="copyUrl('https://martin-eisenreich.github.io/4fin-os/MANUAL%20A1.pdf')">Kopírovat</button>
+      </div>
+    </div>
+    <div class="doc-card">
+      <div class="doc-icon">📋</div>
+      <div class="doc-info">
+        <div class="doc-name">Manuál A1 — Представление компании <span class="lang-badge lang-ru">RU</span></div>
+        <div class="doc-desc">Poradenský manuál A1 v ruštině</div>
+        <div class="doc-ukoly">Používá se při úkolech: A1 – samostudium (RU klienti)</div>
+      </div>
+      <div class="doc-actions">
+        <a class="btn-open" href="https://martin-eisenreich.github.io/4fin-os/A1%20ru%C5%A1tina.pdf" target="_blank">⬆ Otevřít</a>
+        <button class="btn-copy" onclick="copyUrl('https://martin-eisenreich.github.io/4fin-os/A1%20ru%C5%A1tina.pdf')">Kopírovat</button>
+      </div>
+    </div>
+    <div class="doc-card">
+      <div class="doc-icon">📊</div>
+      <div class="doc-info">
+        <div class="doc-name">Manuál A2 — Finanční analýza <span class="lang-badge lang-cz">CZ</span></div>
+        <div class="doc-desc">Kompletní manuál pro finanční analýzu A2</div>
+        <div class="doc-ukoly">Používá se při úkolech: Vysvětlení A2, A2 – samostudium, A2 tréninky</div>
+      </div>
+      <div class="doc-actions">
+        <a class="btn-open" href="https://martin-eisenreich.github.io/4fin-os/A2%20v%20CJ.pdf" target="_blank">⬆ Otevřít</a>
+        <button class="btn-copy" onclick="copyUrl('https://martin-eisenreich.github.io/4fin-os/A2%20v%20CJ.pdf')">Kopírovat</button>
+      </div>
+    </div>
+    <div class="doc-card">
+      <div class="doc-icon">📊</div>
+      <div class="doc-info">
+        <div class="doc-name">Manuál A2 — Финансовый анализ <span class="lang-badge lang-ru">RU</span></div>
+        <div class="doc-desc">Manuál A2 v ruštině</div>
+        <div class="doc-ukoly">Používá se při úkolech: A2 – samostudium (RU klienti)</div>
+      </div>
+      <div class="doc-actions">
+        <a class="btn-open" href="https://martin-eisenreich.github.io/4fin-os/A2%20rustina.pdf" target="_blank">⬆ Otevřít</a>
+        <button class="btn-copy" onclick="copyUrl('https://martin-eisenreich.github.io/4fin-os/A2%20rustina.pdf')">Kopírovat</button>
+      </div>
+    </div>
+    <div class="doc-card">
+      <div class="doc-icon">📊</div>
+      <div class="doc-info">
+        <div class="doc-name">Manuál A2 — Doplňkový <span class="lang-badge lang-cz">CZ</span></div>
+        <div class="doc-desc">Doplňkový manuál k A2</div>
+        <div class="doc-ukoly">Používá se při úkolech: A2 – samostudium</div>
+      </div>
+      <div class="doc-actions">
+        <a class="btn-open" href="https://martin-eisenreich.github.io/4fin-os/A2%20Manual.pdf" target="_blank">⬆ Otevřít</a>
+        <button class="btn-copy" onclick="copyUrl('https://martin-eisenreich.github.io/4fin-os/A2%20Manual.pdf')">Kopírovat</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Oslovení a námitky</div>
+  <div class="doc-grid">
+    <div class="doc-card">
+      <div class="doc-icon">💬</div>
+      <div class="doc-info">
+        <div class="doc-name">Námitkovník <span class="lang-badge lang-cz">CZ</span></div>
+        <div class="doc-desc">Vzorové odpovědi na námitky při telefonování</div>
+        <div class="doc-ukoly">Používá se při úkolech: Námitkovník – vysvětlení, Samostudium námitkovníku</div>
+      </div>
+      <div class="doc-actions">
+        <a class="btn-open" href="https://martin-eisenreich.github.io/4fin-os/namitovnik.pdf" target="_blank">⬆ Otevřít</a>
+        <button class="btn-copy" onclick="copyUrl('https://martin-eisenreich.github.io/4fin-os/namitovnik.pdf')">Kopírovat</button>
+      </div>
+    </div>
+    <div class="doc-card">
+      <div class="doc-icon">💬</div>
+      <div class="doc-info">
+        <div class="doc-name">Námitkovník <span class="lang-badge lang-ru">RU</span></div>
+        <div class="doc-desc">Vzorové odpovědi na námitky v ruštině</div>
+        <div class="doc-ukoly">Používá se při úkolech: Námitkovník – vysvětlení (RU)</div>
+      </div>
+      <div class="doc-actions">
+        <a class="btn-open" href="https://martin-eisenreich.github.io/4fin-os/namitovnik%20rustina.pdf" target="_blank">⬆ Otevřít</a>
+        <button class="btn-copy" onclick="copyUrl('https://martin-eisenreich.github.io/4fin-os/namitovnik%20rustina.pdf')">Kopírovat</button>
+      </div>
+    </div>
+    <div class="doc-card">
+      <div class="doc-icon">📄</div>
+      <div class="doc-info">
+        <div class="doc-name">Poradenský manuál — Kontaktování, schůzka, analýza</div>
+        <div class="doc-desc">Kompletní průvodce poradenským procesem</div>
+        <div class="doc-ukoly">Používá se při úkolech: Seznámení s poradenským procesem</div>
+      </div>
+      <div class="doc-actions">
+        <a class="btn-open" href="https://martin-eisenreich.github.io/4fin-os/Manu%C3%A1l%20Poradensky%20proces%20kontaktov%C3%A1n%C3%AD%20sch%C5%AFzka%20anal%C3%BDza%20doporu%C4%8Den%C3%AD%20230301%20(3).pdf" target="_blank">⬆ Otevřít</a>
+        <button class="btn-copy" onclick="copyUrl('https://martin-eisenreich.github.io/4fin-os/Manu%C3%A1l%20Poradensky%20proces%20kontaktov%C3%A1n%C3%AD%20sch%C5%AFzka%20anal%C3%BDza%20doporu%C4%8Den%C3%AD%20230301%20(3).pdf')">Kopírovat</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Prezentace & Formuláře</div>
+  <div class="doc-grid">
+    <div class="doc-card">
+      <div class="doc-icon">🏢</div>
+      <div class="doc-info">
+        <div class="doc-name">Prezentace společnosti 4fin 2025 <span class="lang-badge lang-cz">CZ</span></div>
+        <div class="doc-desc">Aktuální prezentace společnosti – verze 11/2025</div>
+        <div class="doc-ukoly">Používá se při úkolech: Rozdání představení společnosti</div>
+      </div>
+      <div class="doc-actions">
+        <a class="btn-open" href="https://martin-eisenreich.github.io/4fin-os/Prezentace%20spolecnosti%204FIN%20-%20A5_10str%20-%20verze%2011_2025.pdf" target="_blank">⬆ Otevřít</a>
+        <button class="btn-copy" onclick="copyUrl('https://martin-eisenreich.github.io/4fin-os/Prezentace%20spolecnosti%204FIN%20-%20A5_10str%20-%20verze%2011_2025.pdf')">Kopírovat</button>
+      </div>
+    </div>
+    <div class="doc-card">
+      <div class="doc-icon">📊</div>
+      <div class="doc-info">
+        <div class="doc-name">IK Karta</div>
+        <div class="doc-desc">Individuální karta konzultanta – výkaz aktivity</div>
+        <div class="doc-ukoly">Používá se při úkolech: Nastavení pracovního e-mailu, IK karta</div>
+      </div>
+      <div class="doc-actions">
+        <a class="btn-open" href="https://martin-eisenreich.github.io/4fin-os/IK%20KARTA%20(2).xlsx" target="_blank">⬆ Otevřít</a>
+        <button class="btn-copy" onclick="copyUrl('https://martin-eisenreich.github.io/4fin-os/IK%20KARTA%20(2).xlsx')">Kopírovat</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"><span>✓</span><span id="toastText">Odkaz zkopírován</span></div>
+
+<script>
+function updateClock(){
+  const n=new Date();
+  const el=document.getElementById('clock');
+  if(el) el.textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+}
+updateClock(); setInterval(updateClock,30000);
+
+function copyUrl(url){
+  navigator.clipboard.writeText(url).then(()=>{
+    showToast('Odkaz zkopírován do schránky');
+  }).catch(()=>{
+    // fallback pro starší zařízení
+    const el=document.createElement('textarea');
+    el.value=url; document.body.appendChild(el);
+    el.select(); document.execCommand('copy');
+    document.body.removeChild(el);
+    showToast('Odkaz zkopírován');
+  });
+}
+
+function showToast(text){
+  const t=document.getElementById('toast');
+  document.getElementById('toastText').textContent=text;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+</script>
+</body>
+</html>
