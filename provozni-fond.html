@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>4fin | Provozní fond</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  :root{
+    --bg:#0d0f14;--surface:#151820;--surface2:#1c2030;
+    --border:#252a3a;--accent:#c8a96e;--accent2:#e8c98e;
+    --green:#4caf82;--red:#e05252;--yellow:#e0a832;
+    --text:#e8eaf0;--text2:#8892a4;--text3:#555f72;--r:12px;--mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;padding-bottom:60px;}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 20px;position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;}
+  .back-btn{font-size:12px;color:var(--text3);text-decoration:none;font-family:var(--mono);}
+  .header-title{font-size:18px;font-weight:700;}
+  .shell{max-width:700px;margin:0 auto;padding:20px 16px;}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:16px;}
+  .card-title{font-size:12px;font-weight:700;color:var(--accent);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:14px;}
+  .field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
+  .field label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.04em;}
+  .field input,.field textarea{background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;padding:10px 12px;outline:none;}
+  .field input:focus,.field textarea:focus{border-color:var(--accent);}
+  .btn{background:var(--accent);color:var(--bg);border:none;border-radius:8px;font-size:14px;font-weight:700;padding:12px 20px;cursor:pointer;width:100%;}
+  .btn:disabled{opacity:0.5;}
+
+  .dluznik-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:10px;}
+  .dluznik-card.potvrzeno{opacity:0.5;}
+  .dluznik-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px;}
+  .dluznik-name{font-size:15px;font-weight:700;}
+  .dluznik-castka{font-family:var(--mono);font-size:16px;font-weight:700;color:var(--red);}
+  .dluznik-card.potvrzeno .dluznik-castka{color:var(--green);}
+  .dluznik-meta{font-size:12px;color:var(--text2);line-height:1.6;}
+  .badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;margin-top:6px;}
+  .badge-cekame{background:rgba(224,82,82,0.15);color:var(--red);}
+  .badge-ok{background:rgba(76,175,130,0.15);color:var(--green);}
+  .btn-remove{background:rgba(85,95,114,0.1);border:1px solid var(--border);border-radius:6px;color:var(--text3);font-size:11px;padding:5px 10px;cursor:pointer;margin-top:8px;}
+  .empty{text-align:center;padding:30px;color:var(--text3);}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--green);color:#0d0f14;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s;z-index:100;}
+  .toast.show{opacity:1;}
+  .toast.err{background:var(--red);color:#fff;}
+</style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" class="back-btn">← 4fin OS</a>
+  <div class="header-title">Provozní fond</div>
+  <div></div>
+</header>
+
+<div class="shell">
+  <div class="card">
+    <div class="card-title">➕ Přidat dlužníka</div>
+    <div class="field"><label>Jméno</label><input type="text" id="fJmeno" placeholder="Jan Novák"></div>
+    <div class="field"><label>Email</label><input type="email" id="fEmail" placeholder="jan.novak@4fin.cz"></div>
+    <div class="field"><label>Částka (Kč)</label><input type="number" id="fCastka" placeholder="0"></div>
+    <div class="field"><label>Poznámka (nepovinné)</label><textarea id="fPoznamka" rows="2" placeholder="Za jaké období, jaký fond..."></textarea></div>
+    <button class="btn" id="btnPridat" onclick="pridatDluznika()">Přidat a odeslat upomínku</button>
+  </div>
+
+  <div class="card-title" style="margin-bottom:10px;">Dlužníci</div>
+  <div id="list"><div class="empty">Načítám...</div></div>
+</div>
+
+<div class="toast" id="toast"><span id="toastText"></span></div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyqnJsAlmzOAntypivM5oiLt8twpNJkJrUaK4D-rkvQPzFC_btwUrC8ivasYrnWbdsM6g/exec';
+
+let dluznici = [];
+
+document.addEventListener('DOMContentLoaded', nacti);
+
+async function nacti() {
+  try {
+    const res = await fetch(SCRIPT_URL + '?action=getDluzniciFondu');
+    dluznici = await res.json();
+  } catch(e) { dluznici = []; }
+  render();
+}
+
+function render() {
+  const list = document.getElementById('list');
+  if (!dluznici.length) {
+    list.innerHTML = '<div class="empty">Zatím žádní dlužníci evidovaní.</div>';
+    return;
+  }
+  const razeno = dluznici.slice().sort((a,b) => (a.potvrzeno === b.potvrzeno) ? 0 : (a.potvrzeno ? 1 : -1));
+  list.innerHTML = razeno.map(d => `
+    <div class="dluznik-card ${d.potvrzeno?'potvrzeno':''}">
+      <div class="dluznik-top">
+        <div class="dluznik-name">${esc(d.jmeno)}</div>
+        <div class="dluznik-castka">${d.castka.toLocaleString('cs-CZ')} Kč</div>
+      </div>
+      <div class="dluznik-meta">
+        ${esc(d.email)}<br>
+        ${d.poznamka ? esc(d.poznamka) + '<br>' : ''}
+        Přidáno: ${esc(d.datumPridani)} · Poslední upomínka: ${esc(d.posledniPripominka)}
+      </div>
+      <div class="badge ${d.potvrzeno?'badge-ok':'badge-cekame'}">${d.potvrzeno?'✅ Zaplaceno':'⏳ Čeká na potvrzení'}</div><br>
+      <button class="btn-remove" onclick="smazDluznika('${d.id}')">🗑 Smazat záznam</button>
+    </div>
+  `).join('');
+}
+
+async function pridatDluznika() {
+  const jmeno = document.getElementById('fJmeno').value.trim();
+  const email = document.getElementById('fEmail').value.trim();
+  const castka = +document.getElementById('fCastka').value || 0;
+  const poznamka = document.getElementById('fPoznamka').value.trim();
+  if (!jmeno || !email) { showToast('Vyplň jméno a email', true); return; }
+
+  const btn = document.getElementById('btnPridat');
+  btn.disabled = true; btn.textContent = '⏳ Odesílám...';
+
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST', headers: {'Content-Type':'text/plain'},
+      body: JSON.stringify({ action: 'pridatDluznikaFondu', jmeno, email, castka, poznamka })
+    });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      showToast('✅ Dlužník přidán, upomínka odeslána');
+      document.getElementById('fJmeno').value = '';
+      document.getElementById('fEmail').value = '';
+      document.getElementById('fCastka').value = '';
+      document.getElementById('fPoznamka').value = '';
+      nacti();
+    } else {
+      showToast('⚠️ ' + (data.message || 'Nepodařilo se přidat'), true);
+    }
+  } catch(e) {
+    showToast('⚠️ Chyba: ' + e.message, true);
+  }
+  btn.disabled = false; btn.textContent = 'Přidat a odeslat upomínku';
+}
+
+async function smazDluznika(id) {
+  if (!confirm('Opravdu smazat tento záznam?')) return;
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST', headers: {'Content-Type':'text/plain'},
+      body: JSON.stringify({ action: 'smazDluznikaFondu', id })
+    });
+    const data = await res.json();
+    if (data.status === 'ok') { showToast('🗑 Smazáno'); nacti(); }
+    else showToast('⚠️ Nepodařilo se smazat', true);
+  } catch(e) { showToast('⚠️ Chyba: ' + e.message, true); }
+}
+
+function showToast(msg, err) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastText').textContent = msg;
+  t.className = 'toast show' + (err ? ' err' : '');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>
