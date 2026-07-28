@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0d0f14">
+<title>4fin | Manažerská porada</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  :root{
+    --bg:#0d0f14;--surface:#151820;--surface2:#1c2030;--surface3:#232838;
+    --border:#252a3a;--accent:#c8a96e;--accent2:#e8c98e;
+    --green:#4caf82;--red:#e05252;--yellow:#e0a832;--blue:#5b8dee;
+    --text:#e8eaf0;--text2:#8892a4;--text3:#555f72;--r:12px;--mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;padding-bottom:100px;}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 20px 12px;position:sticky;top:0;z-index:50;}
+  .header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+  .back-btn{font-size:11px;color:var(--text3);text-decoration:none;font-family:var(--mono);}
+  .header-date{font-size:11px;color:var(--text3);}
+  .header-title{font-size:20px;font-weight:700;color:var(--text);margin-top:2px;}
+  .sync-status{font-size:11px;display:flex;align-items:center;gap:6px;margin-top:4px;color:var(--text3);}
+  .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--green);}
+  .shell{max-width:700px;margin:0 auto;padding:20px 16px;}
+  .section-label{font-size:11px;font-weight:700;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin:20px 0 10px;display:flex;align-items:center;gap:10px;}
+  .section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+  .empty{text-align:center;padding:40px 20px;color:var(--text3);}
+  .empty-icon{font-size:40px;margin-bottom:12px;}
+
+  .topic-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px;transition:border-color 0.15s;}
+  .topic-card.resolved{border-color:var(--green);}
+  .topic-card.deferred{opacity:0.45;}
+  .topic-top-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .btn-delete-topic{flex-shrink:0;background:none;border:1.5px solid var(--border);border-radius:8px;color:var(--text3);font-size:14px;cursor:pointer;padding:6px 9px;transition:all 0.15s;}
+  .btn-delete-topic:active{border-color:var(--red);color:var(--red);background:rgba(224,82,82,0.1);}
+  .topic-text{font-size:14px;color:var(--text);line-height:1.5;margin-bottom:10px;}
+  .topic-meta{font-size:11px;color:var(--text3);margin-bottom:12px;}
+  .topic-actions{display:flex;gap:8px;}
+  .btn-topic{flex:1;padding:10px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text2);font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;text-align:center;}
+  .btn-topic.resolve{border-color:var(--green);}
+  .btn-topic.resolve.active{background:rgba(76,175,130,0.15);color:var(--green);}
+  .btn-topic.defer{border-color:var(--text3);}
+  .btn-topic.defer.active{background:rgba(85,95,114,0.15);color:var(--text2);}
+
+  .topic-detail{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:none;}
+  .topic-detail.open{display:block;}
+  .field{margin-bottom:12px;}
+  .field label{display:block;font-size:10px;font-weight:700;color:var(--text3);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px;}
+  .field textarea,.field input,.field select{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;padding:10px 12px;outline:none;transition:border-color 0.15s;}
+  .field textarea:focus,.field input:focus,.field select:focus{border-color:var(--accent);}
+  .field textarea{resize:vertical;min-height:60px;}
+
+  .task-row{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;}
+  .task-row-grid{display:grid;grid-template-columns:1fr;gap:8px;}
+  .task-row-bottom{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;}
+  .btn-remove-task{background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;padding:6px;}
+  .btn-add-task{width:100%;background:none;border:1.5px dashed var(--border);border-radius:8px;color:var(--text3);font-size:12px;font-weight:600;padding:10px;cursor:pointer;margin-top:4px;}
+  .btn-add-task:active{border-color:var(--accent);color:var(--accent);}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:16px;}
+  .card-title{font-size:12px;font-weight:700;color:var(--text2);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:12px;}
+
+  .summary-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;}
+  .summary-row:last-child{border-bottom:none;}
+  .summary-label{color:var(--text3);}
+  .summary-val{color:var(--accent);font-weight:700;font-family:var(--mono);}
+
+  .btn-primary{width:100%;background:var(--accent);color:#0d0f14;border:none;border-radius:10px;font-family:'Inter',sans-serif;font-size:15px;font-weight:700;padding:15px;cursor:pointer;margin-top:8px;}
+  .btn-primary:active{background:var(--accent2);}
+  .btn-primary:disabled{opacity:0.4;cursor:not-allowed;}
+  .loading{display:flex;align-items:center;gap:8px;color:var(--text3);font-size:12px;padding:8px 0;}
+  .spinner-sm{width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <a href="index.html" class="back-btn">← 4fin OS</a>
+    <div class="header-date" id="headerDate"></div>
+  </div>
+  <div class="header-title">Manažerská porada</div>
+  <div class="sync-status"><div class="sync-dot"></div><span id="syncText">Připraveno</span></div>
+</header>
+
+<div class="shell">
+  <div class="section-label">Přidat nové téma</div>
+  <div class="card">
+    <div class="field">
+      <textarea id="noveTemaText" placeholder="Napiš nové téma na poradu..." rows="2"></textarea>
+    </div>
+    <button class="btn-primary" id="btnPridatTema" onclick="pridatNoveTemaPoradu(this)">+ Přidat téma</button>
+  </div>
+
+  <div class="section-label">Témata z poznámkového bloku</div>
+  <div id="temataList"><div class="loading"><div class="spinner-sm"></div><span>Načítám témata...</span></div></div>
+
+  <div class="section-label" id="zapisLabel" style="display:none;">Zápis z porady</div>
+  <div class="card" id="zapisCard" style="display:none;">
+    <div class="card-title">📝 Celkové shrnutí (volitelné)</div>
+    <div class="field">
+      <textarea id="zapisText" placeholder="Volné shrnutí porady, celkový dojem, další kroky..." rows="4"></textarea>
+    </div>
+  </div>
+
+  <div class="card" id="prehledCard" style="display:none;">
+    <div class="card-title">📊 Přehled</div>
+    <div id="prehledObsah"></div>
+  </div>
+
+  <button class="btn-primary" id="btnOdeslat" style="display:none;" onclick="odeslatPoradu()">📤 Uložit zápis a odeslat úkoly</button>
+</div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyqnJsAlmzOAntypivM5oiLt8twpNJkJrUaK4D-rkvQPzFC_btwUrC8ivasYrnWbdsM6g/exec?token=6696d0e4ae4d7f0d73530fbd67961aeb2d823f69&admin_key=8e95a6c02cd185782552ec71b5bc712bf4cdb792';
+
+const MANAGERS = [
+  {id:'truhlar',     name:'Truhlář, Luboš',    email:'lubos.truhlar@4fin.cz'},
+  {id:'bugaeva',     name:'Bugaeva, Marina',   email:'marina.bugaeva@4fin.cz'},
+  {id:'honcharenko', name:'Honcharenko, Olha', email:'olha.honcharenko@4fin.cz'},
+  {id:'kruts',       name:'Kruts, Nataliia',   email:'natalia.kruts@4fin.cz'},
+];
+
+let temata = [];        // témata z poznámkového bloku (type='porada', nezpracovaná)
+let stavTemat = {};      // id -> 'resolve' | 'defer' | null
+let ukolyTemat = {};     // id -> pole úkolů [{popis, vlastnikId, termin}]
+let zaverTemat = {};     // id -> textový závěr/rozhodnutí
+
+document.addEventListener('DOMContentLoaded', () => {
+  updateClock();
+  setInterval(updateClock, 60000);
+  nactiTemata();
+});
+
+function updateClock() {
+  document.getElementById('headerDate').textContent = new Date().toLocaleDateString('cs-CZ',{weekday:'short',day:'numeric',month:'numeric'});
+}
+
+async function smazTema(id) {
+  if (!confirm('Opravdu smazat toto téma?')) return;
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST', headers: {'Content-Type':'text/plain'},
+      body: JSON.stringify({ action: 'smazPoznamku', id: id })
+    });
+    const data = await res.json();
+    if (data && data.status === 'ok') {
+      delete stavTemat[id]; delete ukolyTemat[id]; delete zaverTemat[id];
+      await nactiTemata();
+    } else {
+      alert('⚠️ Nepodařilo se smazat téma.');
+    }
+  } catch(e) {
+    alert('⚠️ Smazání selhalo: ' + e.message);
+  }
+}
+
+async function pridatNoveTemaPoradu(btn) {
+  const ta = document.getElementById('noveTemaText');
+  const text = ta.value.trim();
+  if (!text) { ta.focus(); return; }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Přidávám...';
+
+  const id = 'porada_' + Date.now();
+  const row = [id, 'porada', 'porada', text, Date.now(), 'active'];
+
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST', headers: {'Content-Type':'text/plain'},
+      body: JSON.stringify({ action: 'save', data: [row] })
+    });
+    const data = await res.json();
+    if (data && data.status === 'ok') {
+      ta.value = '';
+      await nactiTemata();
+    } else {
+      alert('⚠️ Nepodařilo se přidat téma: ' + (data && data.message || 'neznámá chyba'));
+    }
+  } catch(e) {
+    alert('⚠️ Přidání selhalo: ' + e.message);
+  }
+  btn.disabled = false;
+  btn.textContent = '+ Přidat téma';
+}
+
+async function nactiTemata() {
+  try {
+    const res = await fetch(SCRIPT_URL+'&action=getPoradaTemata');
+    temata = await res.json();
+  } catch(e) {
+    document.getElementById('syncText').textContent = 'Chyba načítání — zkus obnovit stránku';
+    temata = [];
+  }
+  renderTemata();
+}
+
+function renderTemata() {
+  const list = document.getElementById('temataList');
+  if (!temata.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">🗣️</div><div>Žádná nová témata na poradu.<br>Přidej téma výše, nebo v Poznámkovém bloku pod kategorií "Porada".</div></div>`;
+    document.getElementById('zapisLabel').style.display = 'none';
+    document.getElementById('zapisCard').style.display = 'none';
+    document.getElementById('prehledCard').style.display = 'none';
+    document.getElementById('btnOdeslat').style.display = 'none';
+    return;
+  }
+  list.innerHTML = temata.map(t => {
+    const stav = stavTemat[t.id] || null;
+    const open = stav === 'resolve';
+    return `<div class="topic-card ${stav==='resolve'?'resolved':''} ${stav==='defer'?'deferred':''}" id="card-${t.id}">
+      <div class="topic-top-row">
+        <div class="topic-text">${escHtml(t.text)}</div>
+        <button class="btn-delete-topic" onclick="smazTema('${t.id}')" title="Smazat téma">🗑</button>
+      </div>
+      <div class="topic-meta">${new Date(t.created).toLocaleDateString('cs-CZ',{day:'numeric',month:'numeric',year:'numeric'})}</div>
+      <div class="topic-actions">
+        <button class="btn-topic resolve ${stav==='resolve'?'active':''}" onclick="nastavStav('${t.id}','resolve')">✅ Řešit dnes</button>
+        <button class="btn-topic defer ${stav==='defer'?'active':''}" onclick="nastavStav('${t.id}','defer')">⏭ Přenést na příště</button>
+      </div>
+      <div class="topic-detail ${open?'open':''}" id="detail-${t.id}">
+        <div class="field">
+          <label>Závěr / rozhodnutí</label>
+          <textarea oninput="zaverTemat['${t.id}']=this.value" placeholder="Co jsme se dohodli...">${zaverTemat[t.id]||''}</textarea>
+        </div>
+        <label style="display:block;font-size:10px;font-weight:700;color:var(--text3);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px;">Úkoly z tohoto tématu</label>
+        <div id="tasks-${t.id}"></div>
+        <button class="btn-add-task" onclick="pridatUkol('${t.id}')">+ Přidat úkol</button>
+      </div>
+    </div>`;
+  }).join('');
+  temata.forEach(t => { if (stavTemat[t.id]==='resolve') renderUkoly(t.id); });
+  aktualizujPrehled();
+}
+
+function nastavStav(id, stav) {
+  stavTemat[id] = (stavTemat[id] === stav) ? null : stav;
+  if (stavTemat[id] === 'resolve' && (!ukolyTemat[id] || !ukolyTemat[id].length)) {
+    ukolyTemat[id] = [];
+  }
+  renderTemata();
+  if (stavTemat[id] === 'resolve') {
+    document.getElementById('detail-'+id).classList.add('open');
+  }
+}
+
+function pridatUkol(temaId) {
+  if (!ukolyTemat[temaId]) ukolyTemat[temaId] = [];
+  ukolyTemat[temaId].push({ popis:'', vlastnikId: MANAGERS[0].id, termin: defaultTermin() });
+  renderUkoly(temaId);
+  aktualizujPrehled();
+}
+
+function defaultTermin() {
+  const d = new Date(); d.setDate(d.getDate()+7);
+  return d.toISOString().split('T')[0];
+}
+
+function renderUkoly(temaId) {
+  const wrap = document.getElementById('tasks-'+temaId);
+  if (!wrap) return;
+  const seznam = ukolyTemat[temaId] || [];
+  wrap.innerHTML = seznam.map((u, idx) => `
+    <div class="task-row">
+      <div class="task-row-grid">
+        <input type="text" placeholder="Popis úkolu..." value="${escAttr(u.popis)}"
+          oninput="ukolyTemat['${temaId}'][${idx}].popis=this.value">
+        <div class="task-row-bottom">
+          <div><label style="font-size:9px;color:var(--text3);display:block;margin-bottom:4px;">Zodpovídá</label>
+            <select onchange="ukolyTemat['${temaId}'][${idx}].vlastnikId=this.value">
+              ${MANAGERS.map(m=>`<option value="${m.id}" ${u.vlastnikId===m.id?'selected':''}>${m.name.split(',')[0]}</option>`).join('')}
+            </select></div>
+          <div><label style="font-size:9px;color:var(--text3);display:block;margin-bottom:4px;">Termín</label>
+            <input type="date" value="${u.termin}" onchange="ukolyTemat['${temaId}'][${idx}].termin=this.value"></div>
+          <button class="btn-remove-task" onclick="smazUkol('${temaId}',${idx})">×</button>
+        </div>
+      </div>
+    </div>`).join('');
+  aktualizujPrehled();
+}
+
+function smazUkol(temaId, idx) {
+  ukolyTemat[temaId].splice(idx,1);
+  renderUkoly(temaId);
+}
+
+function aktualizujPrehled() {
+  const nejakyStav = Object.values(stavTemat).some(s => s);
+  document.getElementById('zapisLabel').style.display = nejakyStav ? 'flex' : 'none';
+  document.getElementById('zapisCard').style.display = nejakyStav ? 'block' : 'none';
+  document.getElementById('prehledCard').style.display = nejakyStav ? 'block' : 'none';
+  document.getElementById('btnOdeslat').style.display = nejakyStav ? 'block' : 'none';
+
+  const reseno = temata.filter(t => stavTemat[t.id]==='resolve').length;
+  const preneseno = temata.filter(t => stavTemat[t.id]==='defer').length;
+  let vsechnyUkoly = 0;
+  Object.values(ukolyTemat).forEach(arr => vsechnyUkoly += (arr||[]).filter(u=>u.popis.trim()).length);
+
+  document.getElementById('prehledObsah').innerHTML = `
+    <div class="summary-row"><span class="summary-label">Vyřešeno dnes</span><span class="summary-val">${reseno}</span></div>
+    <div class="summary-row"><span class="summary-label">Přeneseno na příště</span><span class="summary-val">${preneseno}</span></div>
+    <div class="summary-row"><span class="summary-label">Celkem úkolů k rozeslání</span><span class="summary-val">${vsechnyUkoly}</span></div>`;
+}
+
+async function odeslatPoradu() {
+  const btn = document.getElementById('btnOdeslat');
+  btn.disabled = true;
+  btn.textContent = '⏳ Odesílám...';
+
+  const zpracovanaTemata = temata.filter(t => stavTemat[t.id]==='resolve').map(t => ({
+    id: t.id,
+    text: t.text,
+    zaver: zaverTemat[t.id] || ''
+  }));
+
+  const vsechnyUkoly = [];
+  temata.forEach(t => {
+    if (stavTemat[t.id] !== 'resolve') return;
+    (ukolyTemat[t.id]||[]).forEach(u => {
+      if (!u.popis.trim()) return;
+      const m = MANAGERS.find(x=>x.id===u.vlastnikId);
+      vsechnyUkoly.push({
+        popis: u.popis.trim(), termin: u.termin,
+        vlastnikId: u.vlastnikId, vlastnikJmeno: m?m.name:u.vlastnikId, vlastnikEmail: m?m.email:''
+      });
+    });
+  });
+
+  const idsKeSmazani = temata.filter(t => stavTemat[t.id]==='resolve').map(t=>t.id);
+
+  const payload = {
+    action: 'zpracovatPoradu',
+    data: {
+      datum: new Date().toISOString(),
+      zapisText: document.getElementById('zapisText').value.trim(),
+      temata: zpracovanaTemata,
+      ukoly: vsechnyUkoly,
+      zpracovaneIds: idsKeSmazani
+    }
+  };
+
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method:'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data && data.status === 'ok') {
+      alert('✅ Zápis uložen, e-maily odeslány.');
+      stavTemat = {}; ukolyTemat = {}; zaverTemat = {};
+      await nactiTemata();
+    } else {
+      alert('⚠️ Něco se nepovedlo: ' + (data && data.message || 'neznámá chyba'));
+    }
+  } catch(e) {
+    alert('⚠️ Odeslání selhalo: ' + e.message);
+  }
+  btn.disabled = false;
+  btn.textContent = '📤 Uložit zápis a odeslat úkoly';
+}
+
+function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
+function escAttr(s){ return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>
