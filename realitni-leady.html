@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4fin | Realitní leady</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  :root{
+    --bg:#0d0f14; --surface:#151820; --surface2:#1c2030; --border:#252a3a;
+    --text:#e8eaf0; --text2:#8892a4; --text3:#555f72;
+    --accent:#c8a96e; --green:#4caf82; --red:#e05252; --blue:#5b8dee; --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--border);background:var(--surface);}
+  .topbar a{color:var(--text2);text-decoration:none;font-size:13px;}
+  .topbar .title{font-family:var(--mono);color:var(--accent);font-size:13px;letter-spacing:0.05em;}
+  .topbar .clock{font-family:var(--mono);color:var(--text3);font-size:12px;}
+  .wrap{max-width:1000px;margin:0 auto;padding:28px 20px 60px;}
+  h1{font-size:22px;margin:0 0 6px;}
+  .sub{color:var(--text2);font-size:13px;margin-bottom:24px;line-height:1.6;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px;}
+  .card-title{font-size:11px;font-weight:700;color:var(--accent);margin-bottom:14px;text-transform:uppercase;letter-spacing:0.05em;}
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;}
+  .stat-box{background:var(--surface2);border-radius:8px;padding:14px 16px;}
+  .stat-num{font-size:24px;font-weight:700;color:var(--accent);font-family:var(--mono);}
+  .stat-label{font-size:11px;color:var(--text3);margin-top:4px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;color:var(--text3);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;padding:6px 8px;border-bottom:1px solid var(--border);}
+  td{padding:8px;border-bottom:1px solid var(--border);vertical-align:middle;}
+  input[type=text],input[type=email],input[type=tel],textarea{
+    background:var(--surface2);border:1.5px solid var(--border);border-radius:6px;color:var(--text);
+    font-family:'Inter',sans-serif;font-size:13px;padding:8px 10px;width:100%;outline:none;
+  }
+  textarea{resize:vertical;min-height:60px;}
+  .btn{background:var(--accent);color:var(--bg);border:none;border-radius:6px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;}
+  .btn.danger{background:rgba(224,82,82,0.15);color:var(--red);border:1px solid rgba(224,82,82,0.3);padding:6px 12px;font-size:12px;}
+  .btn:hover{opacity:0.85;}
+  .add-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .add-form label{display:block;font-size:11px;color:var(--text3);margin-bottom:4px;}
+  .add-form .full{grid-column:1/-1;}
+  .status-msg{font-size:12px;color:var(--green);margin-top:10px;min-height:16px;}
+  .badge{display:inline-block;padding:3px 9px;border-radius:5px;font-size:11px;font-weight:600;}
+  .badge-en{background:rgba(91,141,238,0.15);color:var(--blue);}
+  .badge-ua{background:rgba(200,169,110,0.15);color:var(--accent);}
+  .badge-cz{background:rgba(76,175,130,0.15);color:var(--green);}
+  @media (max-width:700px){
+    .add-form{grid-template-columns:1fr;}
+    table, thead, tbody, th, td, tr{display:block;}
+    thead{display:none;}
+    tr{border-bottom:2px solid var(--border);padding:10px 0;}
+    td{border:none;padding:4px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+    td::before{content:attr(data-label);color:var(--text3);font-size:11px;flex-shrink:0;}
+  }
+  .master-lock{position:fixed;inset:0;background:#0d0f14;z-index:9999;display:flex;align-items:center;justify-content:center;}
+  .master-lock-box{background:#151820;border:1px solid #252a3a;border-radius:14px;padding:32px 28px;max-width:340px;width:90%;text-align:center;}
+  .master-lock-box .lock-icon{font-size:32px;margin-bottom:12px;}
+  .master-lock-box h2{font-size:16px;color:#e8eaf0;margin:0 0 6px;}
+  .master-lock-box p{font-size:12px;color:#8892a4;margin:0 0 18px;line-height:1.5;}
+  .master-lock-box input{width:100%;background:#1c2030;border:1.5px solid #252a3a;border-radius:8px;color:#e8eaf0;font-family:'JetBrains Mono',monospace;font-size:18px;letter-spacing:0.3em;text-align:center;padding:12px;outline:none;margin-bottom:12px;}
+  .master-lock-box input:focus{border-color:#c8a96e;}
+  .master-lock-box button{width:100%;background:#c8a96e;color:#0d0f14;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;}
+  .master-lock-box .lock-msg{font-size:12px;color:#e05252;margin-top:10px;min-height:16px;}
+</style>
+</head>
+<body>
+  <div class="master-lock" id="masterLock">
+    <div class="master-lock-box">
+      <div class="lock-icon">🔒</div>
+      <h2>Přístup jen pro Martina</h2>
+      <p>Zadej master PIN. Po 5 špatných pokusech se zamkne a odemkne jen ručně v Apps Scriptu.</p>
+      <input type="password" id="masterPinInput" inputmode="numeric" maxlength="12" placeholder="PIN" autofocus>
+      <button onclick="prihlasitMaster()">Odemknout</button>
+      <div class="lock-msg" id="masterLockMsg"></div>
+    </div>
+  </div>
+
+  <div class="topbar">
+    <a href="index.html">← 4fin OS</a>
+    <div class="title">4fin // Realitní leady</div>
+    <div class="clock" id="clock"></div>
+  </div>
+  <div class="wrap">
+    <h1>Realitní leady</h1>
+    <div class="sub">Telefonista sem zapíše domluvenou schůzku z realitní kampaně — appka podle jména klienta sama pozná jazyk a schůzku rovnou přidělí správnému poradci. Anglická jména vždy jdou na Olgu, ukrajinská/ruská střídavě mezi Moroz a Karinu, česká střídavě mezi Terku, Radka a Vojtu.</div>
+
+    <div class="card">
+      <div class="card-title">Statistiky</div>
+      <div class="stats-grid" id="statsGrid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Nahlásit domluvenou schůzku</div>
+      <div class="add-form">
+        <div>
+          <label>Jméno klienta</label>
+          <input type="text" id="newJmeno" placeholder="Jméno Příjmení">
+        </div>
+        <div>
+          <label>Telefon</label>
+          <input type="tel" id="newTelefon" placeholder="+420 xxx xxx xxx">
+        </div>
+        <div>
+          <label>Email (nepovinné)</label>
+          <input type="email" id="newEmail" placeholder="klient@email.cz">
+        </div>
+        <div>
+          <label>Lokalita / nemovitost</label>
+          <input type="text" id="newLokalita" placeholder="Praha 5, byt 2+kk...">
+        </div>
+        <div>
+          <label>Termín schůzky</label>
+          <input type="text" id="newDatum" placeholder="15.8.2026 10:00">
+        </div>
+        <div>
+          <label>Makléř</label>
+          <input type="text" id="newMakler" placeholder="Levon Airapetian">
+        </div>
+        <div class="full">
+          <label>Poznámka telefonisty</label>
+          <textarea id="newPoznamka" placeholder="Co je potřeba vědět před schůzkou..."></textarea>
+        </div>
+        <div class="full">
+          <button class="btn" onclick="pridatSchuzku()">+ Nahlásit schůzku</button>
+        </div>
+      </div>
+      <div class="status-msg" id="statusMsg"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Přehled schůzek</div>
+      <table id="schuzkyTable">
+        <thead>
+          <tr>
+            <th>Klient</th>
+            <th>Kontakt</th>
+            <th>Termín</th>
+            <th>Kategorie</th>
+            <th>Přiděleno</th>
+            <th>Makléř</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="schuzkyBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyqnJsAlmzOAntypivM5oiLt8twpNJkJrUaK4D-rkvQPzFC_btwUrC8ivasYrnWbdsM6g/exec?token=6696d0e4ae4d7f0d73530fbd67961aeb2d823f69&admin_key=8e95a6c02cd185782552ec71b5bc712bf4cdb792' + (sessionStorage.getItem('master_pin_4fin') ? '&master_pin=' + encodeURIComponent(sessionStorage.getItem('master_pin_4fin')) : '');
+let SCHUZKY = [];
+
+function updateClock(){
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'});
+}
+
+function badgeFor(kategorie){
+  if(kategorie==='anglicky') return '<span class="badge badge-en">🇬🇧 Anglicky</span>';
+  if(kategorie==='ukrajinsky_rusky') return '<span class="badge badge-ua">🇺🇦 Ukr/Rus</span>';
+  return '<span class="badge badge-cz">🇨🇿 Česky</span>';
+}
+
+async function loadSchuzky(){
+  try{
+    const res = await fetch(SCRIPT_URL + '&action=getRealitniSchuzky');
+    SCHUZKY = await res.json();
+    if(!Array.isArray(SCHUZKY)) SCHUZKY = [];
+  }catch(e){ console.log('Chyba načtení schůzek:', e); SCHUZKY = []; }
+  renderStats();
+  renderTable();
+}
+
+function renderStats(){
+  const celkem = SCHUZKY.length;
+  const perOsoba = {};
+  SCHUZKY.forEach(s=>{ perOsoba[s.prideleno] = (perOsoba[s.prideleno]||0) + 1; });
+  const boxy = [`<div class="stat-box"><div class="stat-num">${celkem}</div><div class="stat-label">Celkem schůzek</div></div>`];
+  Object.keys(perOsoba).sort((a,b)=>perOsoba[b]-perOsoba[a]).forEach(jmeno=>{
+    boxy.push(`<div class="stat-box"><div class="stat-num">${perOsoba[jmeno]}</div><div class="stat-label">${jmeno}</div></div>`);
+  });
+  document.getElementById('statsGrid').innerHTML = boxy.join('');
+}
+
+function renderTable(){
+  const tbody = document.getElementById('schuzkyBody');
+  const razene = [...SCHUZKY].reverse();
+  tbody.innerHTML = razene.map(s=>`
+    <tr>
+      <td data-label="Klient">${s.klientJmeno}</td>
+      <td data-label="Kontakt">${s.telefon}${s.email?' · '+s.email:''}</td>
+      <td data-label="Termín">${s.datumSchuzky||'—'}</td>
+      <td data-label="Kategorie">${badgeFor(s.kategorie)}</td>
+      <td data-label="Přiděleno">${s.prideleno}</td>
+      <td data-label="Makléř">${s.makler||'—'}</td>
+      <td><button class="btn danger" onclick="smazatSchuzku('${s.id}')">Smazat</button></td>
+    </tr>
+  `).join('');
+}
+
+async function pridatSchuzku(){
+  const klientJmeno = document.getElementById('newJmeno').value.trim();
+  const telefon = document.getElementById('newTelefon').value.trim();
+  const email = document.getElementById('newEmail').value.trim();
+  const lokalita = document.getElementById('newLokalita').value.trim();
+  const datumSchuzky = document.getElementById('newDatum').value.trim();
+  const makler = document.getElementById('newMakler').value.trim();
+  const poznamkaTelefonisty = document.getElementById('newPoznamka').value.trim();
+
+  if(!klientJmeno){ setStatus('Zadej prosím jméno klienta.'); return; }
+
+  setStatus('Ukládám a rozděluji…');
+  try{
+    const res = await fetch(SCRIPT_URL, {
+      method:'POST', headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({ action:'saveRealitniSchuzka', klientJmeno, telefon, email, lokalita, datumSchuzky, makler, poznamkaTelefonisty })
+    });
+    const data = await res.json();
+    if(data.status==='ok'){
+      setStatus(`Přiděleno: ${data.prideleno} (${data.kategorie})`);
+      ['newJmeno','newTelefon','newEmail','newLokalita','newDatum','newMakler','newPoznamka'].forEach(id=>document.getElementById(id).value='');
+      await loadSchuzky();
+    } else {
+      setStatus('Chyba: ' + (data.message||'neznámá'));
+    }
+  }catch(e){ setStatus('Chyba při ukládání'); console.log(e); }
+}
+
+async function smazatSchuzku(id){
+  if(!confirm('Opravdu smazat tuto schůzku?')) return;
+  try{
+    await fetch(SCRIPT_URL, {
+      method:'POST', headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({ action:'smazRealitniSchuzku', id })
+    });
+    await loadSchuzky();
+  }catch(e){ console.log(e); }
+}
+
+function setStatus(msg){ document.getElementById('statusMsg').textContent = msg; }
+
+document.addEventListener('DOMContentLoaded', () => {
+  updateClock();
+  setInterval(updateClock, 30000);
+  loadSchuzky();
+});
+
+const MASTER_PIN_STORED = sessionStorage.getItem('master_pin_4fin') || '';
+document.addEventListener('DOMContentLoaded', () => {
+  if (MASTER_PIN_STORED) {
+    const el = document.getElementById('masterLock');
+    if (el) el.style.display = 'none';
+  }
+});
+async function prihlasitMaster(){
+  const pin = document.getElementById('masterPinInput').value.trim();
+  const msg = document.getElementById('masterLockMsg');
+  if(!pin){ msg.textContent = 'Zadej PIN.'; return; }
+  msg.textContent = 'Ověřuji...';
+  try{
+    const baseUrl = SCRIPT_URL.split('&master_pin=')[0];
+    const res = await fetch(baseUrl, {
+      method:'POST', headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({action:'prihlaseniMaster', pin})
+    });
+    const data = await res.json();
+    if(data.ok){
+      sessionStorage.setItem('master_pin_4fin', pin);
+      location.reload();
+    } else {
+      msg.textContent = 'Špatný PIN.';
+    }
+  }catch(e){ msg.textContent = 'Chyba připojení.'; console.log(e); }
+}
+</script>
+</body>
+</html>
