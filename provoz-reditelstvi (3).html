@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>4fin | Provoz ředitelství</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  :root{
+    --bg:#0d0f14;--surface:#151820;--surface2:#1c2030;
+    --border:#252a3a;--accent:#c8a96e;--accent2:#e8c98e;
+    --green:#4caf82;--red:#e05252;--yellow:#e0a832;--blue:#5b8dee;
+    --text:#e8eaf0;--text2:#8892a4;--text3:#555f72;--r:12px;--mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;padding-bottom:60px;}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 20px;position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;}
+  .back-btn{font-size:12px;color:var(--text3);text-decoration:none;font-family:var(--mono);}
+  .header-title{font-size:18px;font-weight:700;}
+  .shell{max-width:700px;margin:0 auto;padding:24px 16px;}
+  .page-sub{font-size:13px;color:var(--text2);margin-bottom:24px;}
+
+  .folder-grid{display:flex;flex-direction:column;gap:12px;}
+  .folder-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:18px 20px;display:flex;align-items:center;gap:16px;text-decoration:none;color:var(--text);transition:border-color 0.15s;cursor:pointer;}
+  .folder-card:hover{border-color:var(--accent);}
+  .folder-card.disabled{opacity:0.45;cursor:default;}
+  .folder-card.disabled:hover{border-color:var(--border);}
+  .folder-icon{width:44px;height:44px;border-radius:10px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+  .folder-info{flex:1;}
+  .folder-name{font-size:15px;font-weight:700;margin-bottom:3px;}
+  .folder-desc{font-size:12px;color:var(--text2);}
+  .folder-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px;font-family:var(--mono);flex-shrink:0;}
+  .badge-live{background:rgba(76,175,130,0.15);color:var(--green);}
+  .badge-planned{background:rgba(224,168,50,0.15);color:var(--yellow);}
+</style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" class="back-btn">← 4fin OS</a>
+  <div class="header-title">Provoz ředitelství</div>
+  <div></div>
+</header>
+
+<div class="shell">
+  <div class="page-sub">Administrativní a provozní agenda regionálního ředitelství — vše na jednom místě, rozdělené do složek.</div>
+
+  <div class="folder-grid">
+    <a class="folder-card" href="provozni-fond.html">
+      <div class="folder-icon">💰</div>
+      <div class="folder-info">
+        <div class="folder-name">Provozní fond</div>
+        <div class="folder-desc">Evidence dlužníků, automatické upomínky do potvrzení platby</div>
+      </div>
+      <div class="folder-badge badge-live">AKTIVNÍ</div>
+    </a>
+
+    <a class="folder-card" href="rozpocet-reditelstvi.html">
+      <div class="folder-icon">📊</div>
+      <div class="folder-info">
+        <div class="folder-name">Rozpočet ředitelství</div>
+        <div class="folder-desc">Výdaje (společné akce, vzdělávání...) a příjmy (insentivy) — vlastní kategorie</div>
+      </div>
+      <div class="folder-badge badge-live">AKTIVNÍ</div>
+    </a>
+
+    <a class="folder-card" href="akce-partnery.html">
+      <div class="folder-icon">🤝</div>
+      <div class="folder-info">
+        <div class="folder-name">Akce s obchodními partnery</div>
+        <div class="folder-desc">Kdo, kdy, jaká akce, finanční účast, co se dělo</div>
+      </div>
+      <div class="folder-badge badge-live">AKTIVNÍ</div>
+    </a>
+
+    <div class="folder-card disabled">
+      <div class="folder-icon">🧾</div>
+      <div class="folder-info">
+        <div class="folder-name">Fakturace</div>
+        <div class="folder-desc">Automatické generování a odesílání faktur e-mailem</div>
+      </div>
+      <div class="folder-badge badge-planned">PŘIPRAVUJEME</div>
+    </div>
+
+    <div class="folder-card disabled">
+      <div class="folder-icon">📅</div>
+      <div class="folder-info">
+        <div class="folder-name">Výročí smluv</div>
+        <div class="folder-desc">Auto, majetek, odpovědnost — upozornění konzultantům 2 měsíce předem</div>
+      </div>
+      <div class="folder-badge badge-planned">PŘIPRAVUJEME</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
