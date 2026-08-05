@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4fin | Telefonista</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f0f11;--sur:#18181c;--sur2:#222228;--brd:#2e2e38;--acc:#e8ff47;--text:#f0f0f0;--muted:#6b6b80;--green:#4ade80;--red:#f87171;--orange:#fb923c;--yellow:#facc15;--blue:#60a5fa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+header{padding:13px 22px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--brd);background:var(--sur);position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:10px;}
+.logo{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;}.logo span{color:var(--acc);}
+.hstats{display:flex;gap:14px;font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);}
+.hstats b{color:var(--text);}
+.progress-wrap{height:4px;background:var(--brd);}
+.progress-fill{height:100%;background:var(--acc);width:0%;transition:width 0.3s;}
+
+.main{display:flex;flex:1;overflow:hidden;}
+.sidebar{width:340px;flex-shrink:0;border-right:1px solid var(--brd);background:var(--sur);overflow-y:auto;}
+.sidebar-item{padding:14px 18px;border-bottom:1px solid var(--brd);cursor:pointer;transition:background 0.15s;}
+.sidebar-item:hover{background:var(--sur2);}
+.sidebar-item.active{background:var(--sur2);border-left:3px solid var(--acc);}
+.si-name{font-size:14px;font-weight:600;margin-bottom:3px;}
+.si-phone{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);}
+
+.detail{flex:1;overflow-y:auto;padding:28px;}
+.detail-inner{max-width:560px;margin:0 auto;}
+.d-name{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;margin-bottom:6px;}
+.d-phone{display:inline-block;font-family:'DM Mono',monospace;font-size:18px;color:var(--acc);text-decoration:none;margin-bottom:16px;}
+.d-phone:hover{text-decoration:underline;}
+.d-meta{font-size:13px;color:var(--muted);margin-bottom:4px;line-height:1.6;}
+.d-info{background:var(--sur);border:1px solid var(--brd);border-radius:12px;padding:14px 16px;margin:16px 0;font-size:13px;line-height:1.7;}
+
+.result-section{background:var(--sur);border:1px solid var(--brd);border-radius:16px;padding:24px;margin-top:20px;}
+.section-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:16px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.result-buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
+.result-btn{padding:14px 8px;border-radius:10px;border:2px solid var(--brd);background:transparent;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s;text-align:center;line-height:1.3;}
+.result-btn .btn-icon{font-size:20px;display:block;margin-bottom:4px;}
+.result-btn.domluveno{--c:var(--green);}
+.result-btn.nedovolal{--c:var(--orange);}
+.result-btn.odmitl{--c:var(--red);}
+.result-btn.zavolat-zpet{--c:var(--blue);}
+.result-btn.nezajem{--c:var(--muted);}
+.result-btn.jine{--c:var(--yellow);}
+.result-btn:hover{border-color:var(--c,var(--brd));}
+.result-btn.selected{background:var(--c);color:#000;border-color:var(--c);}
+
+.callback-row, .datum-row{display:none;gap:10px;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--brd);}
+.callback-row.visible, .datum-row.visible{display:flex;}
+.callback-row label, .datum-row label{font-size:12px;color:var(--muted);white-space:nowrap;}
+.date-input{background:var(--sur2);border:1px solid var(--brd);border-radius:8px;padding:8px 10px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none;flex:1;color-scheme:dark;}
+.date-input:focus{border-color:var(--acc);}
+
+.note-textarea{width:100%;background:var(--sur2);border:1px solid var(--brd);border-radius:10px;padding:12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;resize:vertical;min-height:80px;margin-top:14px;}
+.note-textarea:focus{border-color:var(--acc);}
+.save-btn{background:var(--acc);color:#000;border:none;border-radius:9px;padding:13px 24px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;width:100%;margin-top:16px;}
+.save-btn:hover{opacity:0.85;}
+
+.nav-bar{padding:12px 28px;border-top:1px solid var(--brd);background:var(--sur);display:flex;align-items:center;justify-content:space-between;}
+.nav-btn{background:var(--sur2);border:1px solid var(--brd);border-radius:7px;padding:8px 18px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;transition:all 0.15s;}
+.nav-btn:hover{border-color:var(--acc);color:var(--acc);}
+.nav-btn:disabled{opacity:0.3;cursor:default;}
+.nav-counter{font-family:'DM Mono',monospace;font-size:13px;color:var(--muted);}
+.nav-counter span{color:var(--text);font-weight:500;}
+
+.empty{text-align:center;color:var(--muted);padding:80px 20px;font-size:14px;line-height:1.8;}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--acc);color:#000;padding:11px 18px;border-radius:9px;font-family:'DM Mono',monospace;font-size:13px;font-weight:500;transform:translateY(80px);opacity:0;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);pointer-events:none;z-index:999;}
+.toast.show{transform:translateY(0);opacity:1;}
+
+.master-lock{position:fixed;inset:0;background:#0f0f11;z-index:9999;display:flex;align-items:center;justify-content:center;}
+.master-lock-box{background:#18181c;border:1px solid #2e2e38;border-radius:14px;padding:32px 28px;max-width:340px;width:90%;text-align:center;}
+.master-lock-box .lock-icon{font-size:32px;margin-bottom:12px;}
+.master-lock-box h2{font-family:'Syne',sans-serif;font-size:18px;color:#f0f0f0;margin:0 0 6px;}
+.master-lock-box p{font-size:12px;color:#6b6b80;margin:0 0 18px;line-height:1.5;}
+.master-lock-box input{width:100%;background:#222228;border:1.5px solid #2e2e38;border-radius:8px;color:#f0f0f0;font-family:'DM Mono',monospace;font-size:18px;letter-spacing:0.3em;text-align:center;padding:12px;outline:none;margin-bottom:12px;}
+.master-lock-box input:focus{border-color:#e8ff47;}
+.master-lock-box button{width:100%;background:#e8ff47;color:#0f0f11;border:none;border-radius:8px;padding:11px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;}
+.master-lock-box .lock-msg{font-size:12px;color:#f87171;margin-top:10px;min-height:16px;}
+
+@media (max-width:800px){
+  .sidebar{width:100%;position:fixed;inset:0;top:65px;z-index:50;transform:translateX(-100%);transition:transform 0.25s;}
+  .sidebar.open{transform:translateX(0);}
+  .detail{padding:18px;}
+}
+</style>
+</head>
+<body>
+  <div class="master-lock" id="masterLock">
+    <div class="master-lock-box">
+      <div class="lock-icon">🔒</div>
+      <h2>Telefonista</h2>
+      <p>Zadej svůj PIN.</p>
+      <input type="password" id="masterPinInput" inputmode="numeric" maxlength="12" placeholder="PIN" autofocus>
+      <button onclick="prihlasitTelefonistu()">Odemknout</button>
+      <div class="lock-msg" id="masterLockMsg"></div>
+    </div>
+  </div>
+
+  <header>
+    <div class="logo">📞 4fin <span>Telefonista</span></div>
+    <div class="hstats">
+      <div>Celkem <b id="statTotal">0</b></div>
+      <div>Zbývá <b id="statZbyva">0</b></div>
+      <div>Hotovo dnes <b id="statHotovo">0</b></div>
+    </div>
+  </header>
+  <div class="progress-wrap"><div class="progress-fill" id="progressFill"></div></div>
+
+  <div class="main">
+    <div class="sidebar" id="sidebar"></div>
+    <div class="detail" id="detail">
+      <div class="empty">Načítám...</div>
+    </div>
+  </div>
+
+  <div class="nav-bar" id="navBar" style="display:none;">
+    <button class="nav-btn" id="btnPrev" onclick="go(-1)">← Předchozí</button>
+    <div class="nav-counter"><span id="navPozice">0</span> / <span id="navCelkem">0</span></div>
+    <button class="nav-btn" id="btnNext" onclick="go(1)">Další →</button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyqnJsAlmzOAntypivM5oiLt8twpNJkJrUaK4D-rkvQPzFC_btwUrC8ivasYrnWbdsM6g/exec?token=6696d0e4ae4d7f0d73530fbd67961aeb2d823f69' + (sessionStorage.getItem('telefonista_pin_4fin') ? '&telefonista_pin=' + encodeURIComponent(sessionStorage.getItem('telefonista_pin_4fin')) : '');
+
+let KONTAKTY = [];
+let currentIdx = -1;
+let vybranyVysledek = null;
+let hotovoDnes = 0;
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function toast(text){
+  const t = document.getElementById('toast');
+  t.textContent = text;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+async function nacti(){
+  try{
+    const res = await fetch(SCRIPT_URL + '&action=getKontaktyProTelefonistu');
+    KONTAKTY = await res.json();
+    if(!Array.isArray(KONTAKTY)) KONTAKTY = [];
+  }catch(e){ KONTAKTY = []; console.log(e); }
+  currentIdx = KONTAKTY.length ? 0 : -1;
+  renderSidebar();
+  renderDetail();
+  renderStats();
+}
+
+function renderStats(){
+  document.getElementById('statTotal').textContent = KONTAKTY.length + hotovoDnes;
+  document.getElementById('statZbyva').textContent = KONTAKTY.length;
+  document.getElementById('statHotovo').textContent = hotovoDnes;
+  const pct = (KONTAKTY.length + hotovoDnes) ? (hotovoDnes / (KONTAKTY.length + hotovoDnes)) * 100 : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function renderSidebar(){
+  const el = document.getElementById('sidebar');
+  if(!KONTAKTY.length){ el.innerHTML = ''; return; }
+  el.innerHTML = KONTAKTY.map((k,i) => `
+    <div class="sidebar-item ${i===currentIdx?'active':''}" onclick="vyber(${i})">
+      <div class="si-name">${esc(k.jmeno)}</div>
+      <div class="si-phone">${esc(k.telefon)}</div>
+    </div>
+  `).join('');
+}
+
+function vyber(i){
+  currentIdx = i;
+  vybranyVysledek = null;
+  renderSidebar();
+  renderDetail();
+  document.getElementById('sidebar').classList.remove('open');
+}
+
+function renderDetail(){
+  const el = document.getElementById('detail');
+  const navBar = document.getElementById('navBar');
+  if(currentIdx === -1 || !KONTAKTY.length){
+    el.innerHTML = '<div class="empty">🎉 Žádné kontakty nečekají na zavolání.<br>Vrať se sem, až přibydou nové.</div>';
+    navBar.style.display = 'none';
+    return;
+  }
+  navBar.style.display = 'flex';
+  const k = KONTAKTY[currentIdx];
+  vybranyVysledek = null;
+  el.innerHTML = `
+    <div class="detail-inner">
+      <div class="d-name">${esc(k.jmeno)}</div>
+      <a class="d-phone" href="tel:${esc(k.telefon)}">📞 ${esc(k.telefon)}</a>
+      ${k.email ? `<div class="d-meta">✉️ ${esc(k.email)}</div>` : ''}
+      ${k.makler ? `<div class="d-meta">Makléř: ${esc(k.makler)}</div>` : ''}
+      ${k.informace ? `<div class="d-info">${esc(k.informace)}</div>` : ''}
+
+      <div class="result-section">
+        <div class="section-title">Výsledek hovoru</div>
+        <div class="result-buttons">
+          <button class="result-btn domluveno" onclick="vybratVysledek('domluveno')"><span class="btn-icon">✅</span>Domluveno</button>
+          <button class="result-btn nedovolal" onclick="vybratVysledek('nedovolal')"><span class="btn-icon">📵</span>Nedovolal</button>
+          <button class="result-btn odmitl" onclick="vybratVysledek('odmitl')"><span class="btn-icon">❌</span>Odmítl</button>
+          <button class="result-btn zavolat-zpet" onclick="vybratVysledek('zavolat-zpet')"><span class="btn-icon">🔁</span>Zpětné volání</button>
+          <button class="result-btn nezajem" onclick="vybratVysledek('nezajem')"><span class="btn-icon">🚫</span>Nezájem</button>
+          <button class="result-btn jine" onclick="vybratVysledek('jine')"><span class="btn-icon">💬</span>Jiné</button>
+        </div>
+
+        <div class="datum-row" id="datumRowDomluveno">
+          <label>Kdy schůzka:</label>
+          <input type="datetime-local" class="date-input" id="datumSchuzky">
+        </div>
+
+        <div class="callback-row" id="callbackRow">
+          <label>Zavolat znovu:</label>
+          <input type="datetime-local" class="date-input" id="zpetneVolani">
+        </div>
+
+        <textarea class="note-textarea" id="poznamka" placeholder="Poznámka (nepovinné)..."></textarea>
+        <button class="save-btn" onclick="ulozit()">Uložit výsledek</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('navPozice').textContent = (currentIdx + 1);
+  document.getElementById('navCelkem').textContent = KONTAKTY.length;
+  document.getElementById('btnPrev').disabled = currentIdx <= 0;
+  document.getElementById('btnNext').disabled = currentIdx >= KONTAKTY.length - 1;
+}
+
+function vybratVysledek(v){
+  vybranyVysledek = v;
+  document.querySelectorAll('.result-btn').forEach(b => b.classList.remove('selected'));
+  const btnMap = {domluveno:'.domluveno', nedovolal:'.nedovolal', odmitl:'.odmitl', 'zavolat-zpet':'.zavolat-zpet', nezajem:'.nezajem', jine:'.jine'};
+  const btn = document.querySelector(btnMap[v]);
+  if(btn) btn.classList.add('selected');
+  document.getElementById('datumRowDomluveno').classList.toggle('visible', v === 'domluveno');
+  document.getElementById('callbackRow').classList.toggle('visible', v === 'zavolat-zpet');
+}
+
+async function ulozit(){
+  if(!vybranyVysledek){ toast('Vyber prosím výsledek hovoru.'); return; }
+  const k = KONTAKTY[currentIdx];
+  const poznamka = document.getElementById('poznamka').value.trim();
+  let datumSchuzky = '';
+  if(vybranyVysledek === 'domluveno'){
+    datumSchuzky = document.getElementById('datumSchuzky').value;
+    if(!datumSchuzky){ toast('Zadej prosím datum a čas schůzky.'); return; }
+  }
+  if(vybranyVysledek === 'zavolat-zpet'){
+    const zpetne = document.getElementById('zpetneVolani').value;
+    datumSchuzky = zpetne;
+  }
+
+  try{
+    const res = await fetch(SCRIPT_URL, {
+      method:'POST', headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({ action:'ulozitVysledekVolani', telefonNorm: k.telefonNorm, stav: vybranyVysledek, datumSchuzky, poznamka })
+    });
+    const data = await res.json();
+    toast(data.pridelenoKomu ? ('Uloženo — přiděleno: ' + data.pridelenoKomu) : 'Uloženo ✓');
+    hotovoDnes++;
+    KONTAKTY.splice(currentIdx, 1);
+    if(currentIdx >= KONTAKTY.length) currentIdx = KONTAKTY.length - 1;
+    renderSidebar();
+    renderDetail();
+    renderStats();
+  }catch(e){ toast('Chyba připojení, zkus znovu.'); console.log(e); }
+}
+
+function go(smer){
+  const novy = currentIdx + smer;
+  if(novy < 0 || novy >= KONTAKTY.length) return;
+  vyber(novy);
+}
+
+document.addEventListener('keydown', e => {
+  if(['INPUT','TEXTAREA'].includes(e.target.tagName)) return;
+  if(e.key === 'ArrowRight' || e.key === 'ArrowDown'){ e.preventDefault(); go(1); }
+  if(e.key === 'ArrowLeft' || e.key === 'ArrowUp'){ e.preventDefault(); go(-1); }
+  if(e.key === 'Enter') ulozit();
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (sessionStorage.getItem('telefonista_pin_4fin')) {
+    document.getElementById('masterLock').style.display = 'none';
+    nacti();
+  }
+});
+
+async function prihlasitTelefonistu(){
+  const pin = document.getElementById('masterPinInput').value.trim();
+  const msg = document.getElementById('masterLockMsg');
+  if(!pin){ msg.textContent = 'Zadej PIN.'; return; }
+  msg.textContent = 'Ověřuji...';
+  try{
+    const baseUrl = SCRIPT_URL.split('&telefonista_pin=')[0];
+    const res = await fetch(baseUrl, {
+      method:'POST', headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({action:'prihlaseniTelefonista', pin})
+    });
+    const data = await res.json();
+    if(data.ok){
+      sessionStorage.setItem('telefonista_pin_4fin', pin);
+      location.reload();
+    } else {
+      msg.textContent = 'Špatný PIN.';
+    }
+  }catch(e){ msg.textContent = 'Chyba připojení.'; console.log(e); }
+}
+</script>
+</body>
+</html>
