@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4fin | Tým</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  :root{
+    --bg:#0d0f14; --surface:#151820; --surface2:#1c2030; --border:#252a3a;
+    --text:#e8eaf0; --text2:#8892a4; --text3:#555f72;
+    --accent:#c8a96e; --green:#4caf82; --red:#e05252; --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--border);background:var(--surface);}
+  .topbar a{color:var(--text2);text-decoration:none;font-size:13px;}
+  .topbar .title{font-family:var(--mono);color:var(--accent);font-size:13px;letter-spacing:0.05em;}
+  .topbar .clock{font-family:var(--mono);color:var(--text3);font-size:12px;}
+  .wrap{max-width:1000px;margin:0 auto;padding:28px 20px 60px;}
+  h1{font-size:22px;margin:0 0 6px;}
+  .sub{color:var(--text2);font-size:13px;margin-bottom:24px;line-height:1.6;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;color:var(--text3);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;padding:6px 8px;border-bottom:1px solid var(--border);}
+  td{padding:8px;border-bottom:1px solid var(--border);vertical-align:middle;}
+  input[type=text],input[type=email],select{
+    background:var(--surface2);border:1.5px solid var(--border);border-radius:6px;color:var(--text);
+    font-family:'Inter',sans-serif;font-size:13px;padding:6px 8px;width:100%;outline:none;
+  }
+  input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;}
+  .btn{background:var(--accent);color:var(--bg);border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;}
+  .btn.secondary{background:var(--surface2);color:var(--text2);border:1px solid var(--border);}
+  .btn.danger{background:rgba(224,82,82,0.15);color:var(--red);border:1px solid rgba(224,82,82,0.3);}
+  .btn:hover{opacity:0.85;}
+  .row-actions{display:flex;gap:6px;flex-wrap:wrap;}
+  .add-form{display:grid;grid-template-columns:1.3fr 1.3fr 1fr 0.8fr 0.8fr 1.1fr auto;gap:10px;align-items:end;}
+  .add-form label{display:block;font-size:11px;color:var(--text3);margin-bottom:4px;}
+  .chk-cell{text-align:center;}
+  .status-msg{font-size:12px;color:var(--green);margin-top:8px;min-height:16px;}
+  .inactive-row{opacity:0.45;}
+  .moduly-row{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
+  .moduly-row label.group-label{display:block;font-size:11px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;}
+  .moduly-checks{display:flex;flex-wrap:wrap;gap:14px;}
+  .moduly-checks .mod-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);}
+  .moduly-inline{display:flex;flex-wrap:wrap;gap:6px 10px;font-size:11px;color:var(--text2);}
+  .moduly-inline .mod-item{display:flex;align-items:center;gap:4px;}
+  .pin-reveal{background:rgba(200,169,110,0.12);border:1px solid rgba(200,169,110,0.35);border-radius:8px;padding:10px 14px;margin-top:10px;font-size:13px;color:var(--accent);font-family:var(--mono);}
+  @media (max-width:900px){
+    .add-form{grid-template-columns:1fr 1fr;}
+    table, thead, tbody, th, td, tr{display:block;}
+    thead{display:none;}
+    tr{border-bottom:2px solid var(--border);padding:10px 0;}
+    td{border:none;padding:4px 0;display:flex;justify-content:space-between;align-items:center;gap:8px;}
+    td::before{content:attr(data-label);color:var(--text3);font-size:11px;flex-shrink:0;}
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <a href="index.html">← 4fin OS</a>
+    <div class="title">4fin // Tým</div>
+    <div class="clock" id="clock"></div>
+  </div>
+  <div class="wrap">
+    <h1>Správa týmu</h1>
+    <div class="sub">Jediný zdroj pravdy pro to, kdo se objeví ve výběru "Kdo jsi?" a "Kdo je tvůj nadřízený?" ve všech trenažérech i v individuálních konzultacích. Změny se projeví okamžitě — není potřeba nic nahrávat ani upravovat kód.</div>
+
+    <div class="card" id="loginCard">
+      <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:14px;text-transform:uppercase;letter-spacing:0.05em;font-size:11px;">Přihlášení</div>
+      <div class="add-form" style="grid-template-columns:1fr 1fr auto;">
+        <div>
+          <label>Kdo jsi?</label>
+          <select id="loginSelect"></select>
+        </div>
+        <div>
+          <label>Tvůj PIN</label>
+          <input type="password" id="loginPin" inputmode="numeric" maxlength="6" placeholder="123456">
+        </div>
+        <div>
+          <button class="btn" onclick="prihlasit()">Přihlásit se</button>
+        </div>
+      </div>
+      <div class="status-msg" id="loginMsg"></div>
+    </div>
+
+    <div id="spravaObsah" style="display:none;">
+    <div class="card">
+      <table id="tymTable">
+        <thead>
+          <tr>
+            <th>Jméno</th>
+            <th>Pozice</th>
+            <th>Email</th>
+            <th style="text-align:center;">Aktivní</th>
+            <th style="text-align:center;">Nadřízený</th>
+            <th>Podléhá</th>
+            <th style="text-align:center;">Realitní leady</th>
+            <th style="text-align:center;">Vidí celý tým</th>
+            <th>Moduly</th>
+            <th>Zámek</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tymBody"></tbody>
+      </table>
+      <div class="status-msg" id="statusMsg"></div>
+    </div>
+
+    <div class="card">
+      <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:14px;text-transform:uppercase;letter-spacing:0.05em;font-size:11px;">Přidat novou osobu</div>
+      <div class="add-form">
+        <div>
+          <label>Jméno</label>
+          <input type="text" id="newJmeno" placeholder="Jméno Příjmení">
+        </div>
+        <div>
+          <label>Email</label>
+          <input type="email" id="newEmail" placeholder="jmeno.prijmeni@4fin.cz">
+        </div>
+        <div>
+          <label>Pozice</label>
+          <input type="text" id="newPozice" placeholder="Konzultant">
+        </div>
+        <div class="chk-cell">
+          <label>Aktivní</label>
+          <input type="checkbox" id="newAktivni" checked>
+        </div>
+        <div class="chk-cell">
+          <label>Nadřízený</label>
+          <input type="checkbox" id="newJeNadrizeny">
+        </div>
+        <div>
+          <label>Podléhá</label>
+          <select id="newManazer"></select>
+        </div>
+        <div>
+          <button class="btn" onclick="pridatOsobu()">+ Přidat</button>
+        </div>
+      </div>
+
+      <div class="moduly-row">
+        <label class="group-label">Realitní leady a přístup k modulům</label>
+        <div class="moduly-checks">
+          <div class="mod-item">
+            <input type="checkbox" id="newRealitniLeady">
+            <label for="newRealitniLeady" style="margin:0;color:var(--accent);font-weight:600;">Přidělovat realitní leady</label>
+          </div>
+          <div class="mod-item">
+            <input type="checkbox" id="newVidiCelyTym">
+            <label for="newVidiCelyTym" style="margin:0;color:var(--accent);font-weight:600;">Vidí celý tým (asistentka/admin)</label>
+          </div>
+        </div>
+        <div class="moduly-checks" id="newModulyChecks" style="margin-top:10px;"></div>
+      </div>
+
+      <div>
+        <label style="display:block;font-size:11px;color:var(--text3);margin:14px 0 4px;">PIN (nepovinné — když necháš prázdné, appka vygeneruje náhodný 6místný sama)</label>
+        <input type="text" id="newPin" inputmode="numeric" maxlength="6" placeholder="ponech prázdné = vygenerovat" style="max-width:260px;">
+      </div>
+
+      <div id="pinReveal"></div>
+    </div>
+    </div>
+  </div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyqnJsAlmzOAntypivM5oiLt8twpNJkJrUaK4D-rkvQPzFC_btwUrC8ivasYrnWbdsM6g/exec?token=6696d0e4ae4d7f0d73530fbd67961aeb2d823f69';
+let TYM = [];
+let prihlasenPersonId = '';
+let prihlasenPin = '';
+
+// Seznam modulů appky, ke kterým lze poradci zaznamenat přístup.
+// Zatím jde jen o INFORMATIVNÍ záznam (kdo má co mít) — appka podle
+// tohoto seznamu zatím sama nic nevynucuje, přístup do jednotlivých
+// modulů zůstává řízený tak, jak je nastavený teď (master PIN /
+// PIN poradce podle akce). Chceš-li v budoucnu přístup podle téhle
+// volby i reálně vynutit, je potřeba další úprava na backendu.
+const MODULE_LIST = [
+  { id: 'trenazery', label: 'Trenažéry' },
+  { id: 'realitni-schuzky', label: 'Moje realitní schůzky' },
+  { id: 'moje-ukoly', label: 'Moje úkoly' },
+  { id: 'feedback', label: 'Zpětná vazba (AI chat)' }
+];
+
+function updateClock(){
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'});
+}
+
+async function loadTym(){
+  try{
+    const res = await fetch(SCRIPT_URL + '&action=getTym');
+    TYM = await res.json();
+    if(!Array.isArray(TYM)) TYM = [];
+  }catch(e){ console.log('Chyba načtení týmu:', e); TYM = []; }
+  renderLoginSelect();
+  render();
+  renderNewModulyChecks();
+}
+
+function renderLoginSelect(){
+  const sel = document.getElementById('loginSelect');
+  if(!sel) return;
+  const aktivni = TYM.filter(p=>p.aktivni);
+  sel.innerHTML = '<option value="">-- Vyber své jméno --</option>' +
+    aktivni.map(p=>`<option value="${p.personId}">${p.jmeno}</option>`).join('');
+}
+
+async function prihlasit(){
+  const personId = document.getElementById('loginSelect').value;
+  const pin = document.getElementById('loginPin').value.trim();
+  if(!personId || !pin){ document.getElementById('loginMsg').textContent = 'Vyber jméno a zadej PIN.'; return; }
+  document.getElementById('loginMsg').textContent = 'Ověřuji...';
+  try{
+    const res = await fetch(SCRIPT_URL, {
+      method:'POST', headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({ action:'prihlaseni', personId, pin })
+    });
+    const data = await res.json();
+    if(data.ok){
+      prihlasenPersonId = personId;
+      prihlasenPin = pin;
+      const uroven = urovenPristupu();
+      if(uroven === 'zadny'){
+        document.getElementById('loginMsg').textContent = 'Do správy týmu nemáš přístup — nemáš pod sebou žádné podřízené.';
+        prihlasenPersonId = '';
+        prihlasenPin = '';
+        return;
+      }
+      document.getElementById('loginCard').style.display = 'none';
+      document.getElementById('spravaObsah').style.display = 'block';
+      render();
+    } else {
+      document.getElementById('loginMsg').textContent = 'Špatné jméno nebo PIN.';
+    }
+  }catch(e){ document.getElementById('loginMsg').textContent = 'Chyba připojení.'; console.log(e); }
+}
+
+function nadrizeniOptions(selectedJmeno){
+  const nadrizeni = TYM.filter(p=>p.jeNadrizeny);
+  let html = '<option value="">— žádný —</option>';
+  html += nadrizeni.map(p=>`<option value="${p.jmeno}"${p.jmeno===selectedJmeno?' selected':''}>${p.jmeno}</option>`).join('');
+  return html;
+}
+
+// Vrátí pole všech podřízených (napříč libovolnou hloubkou hierarchie)
+// dané osoby podle jmena — projde celý strom pod ní.
+function vsichniPodrizeni(rootJmeno, tym){
+  const vysledek = [];
+  const fronta = [rootJmeno];
+  while(fronta.length){
+    const aktualni = fronta.shift();
+    tym.filter(p => p.manazerJmeno === aktualni).forEach(d => {
+      vysledek.push(d);
+      fronta.push(d.jmeno);
+    });
+  }
+  return vysledek;
+}
+
+// Určí úroveň přístupu přihlášené osoby do správy týmu:
+// - 'plny'  — bez nadřízeného (kořen hierarchie) NEBO má příznak
+//             vidiCelyTym (asistentka/admin) → vidí úplně všechny
+// - 'strom' — má alespoň jednoho přímého podřízeného → vidí jen svůj
+//             vlastní strom (sebe do výpisu nepočítáme)
+// - 'zadny' — nemá nikoho pod sebou a není kořen ani vidiCelyTym →
+//             do správy týmu se vůbec nedostane
+function urovenPristupu(){
+  const ja = TYM.find(p => p.personId === prihlasenPersonId);
+  if(!ja) return 'zadny';
+  if(!ja.manazerJmeno || ja.vidiCelyTym) return 'plny';
+  const maPodrizene = TYM.some(p => p.manazerJmeno === ja.jmeno);
+  return maPodrizene ? 'strom' : 'zadny';
+}
+
+function viditelnyTym(){
+  const uroven = urovenPristupu();
+  if(uroven === 'plny') return TYM;
+  const ja = TYM.find(p => p.personId === prihlasenPersonId);
+  if(uroven === 'strom') return vsichniPodrizeni(ja.jmeno, TYM);
+  return [];
+}
+
+function renderNewModulyChecks(){
+  const wrap = document.getElementById('newModulyChecks');
+  if(!wrap) return;
+  wrap.innerHTML = MODULE_LIST.map(m => `
+    <div class="mod-item">
+      <input type="checkbox" id="newMod_${m.id}" value="${m.id}">
+      <label for="newMod_${m.id}" style="margin:0;">${m.label}</label>
+    </div>
+  `).join('');
+}
+
+function modulyInlineHtml(i, moduly){
+  const moduly2 = Array.isArray(moduly) ? moduly : [];
+  return '<div class="moduly-inline">' + MODULE_LIST.map(m => `
+    <div class="mod-item">
+      <input type="checkbox" ${moduly2.indexOf(m.id)!==-1?'checked':''} onchange="toggleModul(${i},'${m.id}',this.checked)">
+      <span>${m.label}</span>
+    </div>
+  `).join('') + '</div>';
+}
+
+function toggleModul(i, modId, checked){
+  if(!Array.isArray(TYM[i].moduly)) TYM[i].moduly = [];
+  const idx = TYM[i].moduly.indexOf(modId);
+  if(checked && idx===-1) TYM[i].moduly.push(modId);
+  if(!checked && idx!==-1) TYM[i].moduly.splice(idx,1);
+}
+
+function render(){
+  const tbody = document.getElementById('tymBody');
+  const zobrazenTym = viditelnyTym();
+  tbody.innerHTML = zobrazenTym.map((p)=>{
+    const i = TYM.indexOf(p);
+    return `
+    <tr class="${p.aktivni?'':'inactive-row'}" data-idx="${i}">
+      <td data-label="Jméno"><input type="text" value="${p.jmeno}" onchange="updateField(${i},'jmeno',this.value)"></td>
+      <td data-label="Pozice"><input type="text" value="${p.pozice||''}" placeholder="—" onchange="updateField(${i},'pozice',this.value)"></td>
+      <td data-label="Email"><input type="email" value="${p.email}" onchange="updateField(${i},'email',this.value)"></td>
+      <td data-label="Aktivní" class="chk-cell"><input type="checkbox" ${p.aktivni?'checked':''} onchange="updateField(${i},'aktivni',this.checked)"></td>
+      <td data-label="Nadřízený" class="chk-cell"><input type="checkbox" ${p.jeNadrizeny?'checked':''} onchange="updateField(${i},'jeNadrizeny',this.checked)"></td>
+      <td data-label="Podléhá"><select onchange="updateManazer(${i},this)">${nadrizeniOptions(p.manazerJmeno)}</select></td>
+      <td data-label="Realitní leady" class="chk-cell"><input type="checkbox" ${p.realitniLeady?'checked':''} onchange="updateField(${i},'realitniLeady',this.checked)"></td>
+      <td data-label="Vidí celý tým" class="chk-cell"><input type="checkbox" ${p.vidiCelyTym?'checked':''} onchange="updateField(${i},'vidiCelyTym',this.checked)"></td>
+      <td data-label="Moduly">${modulyInlineHtml(i, p.moduly)}</td>
+      <td data-label="Zámek">${p.uzamceno?'<span style="color:var(--red);font-weight:700;">🔒 uzamčeno</span>':'<span style="color:var(--text3);">—</span>'}</td>
+      <td>
+        <div class="row-actions">
+          <button class="btn secondary" onclick="ulozitOsobu(${i})">Uložit</button>
+          ${p.uzamceno?'<button class="btn" onclick="odemknout(\''+p.personId+'\')">Odemknout</button>':''}
+          <button class="btn danger" onclick="smazatOsobu(${i})">Smazat</button>
+        </div>
+      </td>
+    </tr>
+    `;
+  }).join('');
+  document.getElementById('newManazer').innerHTML = nadrizeniOptions('');
+}
+
+async function odemknout(personId){
+  setStatus('Odemykám...');
+  try{
+    await fetch(SCRIPT_URL, {
+      method:'POST', headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({ action:'odemknoutOsobu', personId, auth_personId: prihlasenPersonId, auth_pin: prihlasenPin })
+    });
+    setStatus('Odemčeno.');
+    await loadTym();
+  }catch(e){ setStatus('Chyba při odemykání'); console.log(e); }
+}
+
+function updateField(i, field, value){
+  TYM[i][field] = value;
+}
+
+function updateManazer(i, sel){
+  const jmeno = sel.value;
+  const match = TYM.find(p=>p.jmeno===jmeno);
+  TYM[i].manazerJmeno = jmeno;
+  TYM[i].manazerEmail = match ? match.email : '';
+}
+
+async function ulozitOsobu(i){
+  const p = TYM[i];
+  setStatus('Ukládám...');
+  try{
+    await fetch(SCRIPT_URL, {
+      method:'POST', headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({ action:'saveTymOsoba', ...p, auth_personId: prihlasenPersonId, auth_pin: prihlasenPin })
+    });
+    setStatus('Uloženo — ' + p.jmeno);
+    await loadTym();
+  }catch(e){ setStatus('Chyba při ukládání'); console.log(e); }
+}
+
+async function smazatOsobu(i){
+  const p = TYM[i];
+  if(!confirm(`Opravdu natrvalo smazat ${p.jmeno} ze seznamu? (Pokud jen odešel/odešla z firmy, doporučujeme místo toho vypnout "Aktivní" a uložit.)`)) return;
+  setStatus('Mažu...');
+  try{
+    await fetch(SCRIPT_URL, {
+      method:'POST', headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({ action:'smazTymOsobu', personId: p.personId, auth_personId: prihlasenPersonId, auth_pin: prihlasenPin })
+    });
+    setStatus('Smazáno — ' + p.jmeno);
+    await loadTym();
+  }catch(e){ setStatus('Chyba při mazání'); console.log(e); }
+}
+
+async function pridatOsobu(){
+  const jmeno = document.getElementById('newJmeno').value.trim();
+  const email = document.getElementById('newEmail').value.trim();
+  const pozice = document.getElementById('newPozice').value.trim();
+  const aktivni = document.getElementById('newAktivni').checked;
+  const jeNadrizeny = document.getElementById('newJeNadrizeny').checked;
+  const realitniLeady = document.getElementById('newRealitniLeady').checked;
+  const vidiCelyTym = document.getElementById('newVidiCelyTym').checked;
+  const manazerSel = document.getElementById('newManazer');
+  const manazerJmeno = manazerSel.value;
+  const manazerMatch = TYM.find(p=>p.jmeno===manazerJmeno);
+  const pin = document.getElementById('newPin').value.trim();
+  const moduly = MODULE_LIST.filter(m => document.getElementById('newMod_'+m.id).checked).map(m => m.id);
+
+  if(!jmeno){ setStatus('Zadej prosím jméno.'); return; }
+
+  setStatus('Přidávám...');
+  try{
+    const res = await fetch(SCRIPT_URL, {
+      method:'POST', headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({
+        action:'saveTymOsoba', jmeno, email, pozice, aktivni, jeNadrizeny, realitniLeady, vidiCelyTym, moduly, pin,
+        manazerJmeno: manazerJmeno, manazerEmail: manazerMatch ? manazerMatch.email : '',
+        auth_personId: prihlasenPersonId, auth_pin: prihlasenPin
+      })
+    });
+    const data = await res.json();
+    document.getElementById('newJmeno').value='';
+    document.getElementById('newEmail').value='';
+    document.getElementById('newPozice').value='';
+    document.getElementById('newAktivni').checked=true;
+    document.getElementById('newJeNadrizeny').checked=false;
+    document.getElementById('newRealitniLeady').checked=false;
+    document.getElementById('newVidiCelyTym').checked=false;
+    document.getElementById('newPin').value='';
+    MODULE_LIST.forEach(m => { document.getElementById('newMod_'+m.id).checked = false; });
+    setStatus('Přidáno — ' + jmeno);
+    const pinReveal = document.getElementById('pinReveal');
+    if(data && data.pin){
+      pinReveal.innerHTML = `<div class="pin-reveal">PIN pro ${jmeno}: <strong>${data.pin}</strong> — pošli mu ho, appka si ho už dál nezobrazí.</div>`;
+    } else {
+      pinReveal.innerHTML = '';
+    }
+    await loadTym();
+  }catch(e){ setStatus('Chyba při přidávání'); console.log(e); }
+}
+
+function setStatus(msg){
+  document.getElementById('statusMsg').textContent = msg;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  updateClock();
+  setInterval(updateClock, 30000);
+  loadTym();
+});
+</script>
+</body>
+</html>
