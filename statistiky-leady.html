@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4fin | Statistiky realitních leadů</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  :root{
+    --bg:#0d0f14; --surface:#151820; --surface2:#1c2030; --border:#252a3a;
+    --text:#e8eaf0; --text2:#8892a4; --text3:#555f72;
+    --accent:#c8a96e; --green:#4caf82; --red:#e05252; --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--border);background:var(--surface);flex-wrap:wrap;gap:8px;}
+  .topbar a{color:var(--text2);text-decoration:none;font-size:13px;}
+  .topbar .title{font-family:var(--mono);color:var(--accent);font-size:13px;letter-spacing:0.05em;}
+  .wrap{max-width:1000px;margin:0 auto;padding:24px 16px 60px;}
+  h1{font-size:20px;margin:0 0 16px;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:16px;overflow-x:auto;}
+  .card-title{font-size:11px;font-weight:700;color:var(--accent);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.05em;}
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px;}
+  .stat-box{background:var(--surface2);border-radius:8px;padding:12px 14px;}
+  .stat-num{font-size:22px;font-weight:700;font-family:var(--mono);color:var(--accent);}
+  .stat-label{font-size:11px;color:var(--text3);margin-top:4px;}
+  .tabs{display:flex;gap:6px;margin-bottom:14px;}
+  .tab-btn{background:var(--surface2);border:1.5px solid var(--border);color:var(--text2);border-radius:7px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;}
+  .tab-btn.active{background:var(--accent);color:var(--bg);border-color:var(--accent);}
+  table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap;}
+  th{text-align:left;color:var(--text3);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:0.04em;padding:7px 8px;border-bottom:1px solid var(--border);}
+  td{padding:8px;border-bottom:1px solid var(--border);}
+  td.num{font-family:var(--mono);text-align:center;}
+  .trend-up{color:var(--green);}
+  .trend-down{color:var(--red);}
+  .trend-flat{color:var(--text3);}
+  .duvody-toggle{color:var(--accent);cursor:pointer;font-size:11px;text-decoration:underline;}
+  .duvody-list{display:none;background:var(--surface2);border-radius:8px;padding:12px 14px;margin-top:8px;font-size:12px;color:var(--text2);line-height:1.7;white-space:normal;}
+  .duvody-list.open{display:block;}
+  .master-lock{position:fixed;inset:0;background:#0d0f14;z-index:9999;display:flex;align-items:center;justify-content:center;}
+  .master-lock-box{background:#151820;border:1px solid #252a3a;border-radius:14px;padding:32px 28px;max-width:340px;width:90%;text-align:center;}
+  .master-lock-box .lock-icon{font-size:32px;margin-bottom:12px;}
+  .master-lock-box h2{font-size:16px;color:#e8eaf0;margin:0 0 6px;}
+  .master-lock-box p{font-size:12px;color:#8892a4;margin:0 0 18px;line-height:1.5;}
+  .master-lock-box input{width:100%;background:#1c2030;border:1.5px solid #252a3a;border-radius:8px;color:#e8eaf0;font-family:'JetBrains Mono',monospace;font-size:18px;letter-spacing:0.3em;text-align:center;padding:12px;outline:none;margin-bottom:12px;}
+  .master-lock-box input:focus{border-color:#c8a96e;}
+  .master-lock-box button{width:100%;background:#c8a96e;color:#0d0f14;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;}
+  .master-lock-box .lock-msg{font-size:12px;color:#e05252;margin-top:10px;min-height:16px;}
+</style>
+</head>
+<body>
+  <div class="master-lock" id="masterLock">
+    <div class="master-lock-box">
+      <div class="lock-icon">🔒</div>
+      <h2>Přístup jen pro Martina</h2>
+      <p>Zadej master PIN. Po 5 špatných pokusech se zamkne a odemkne jen ručně v Apps Scriptu.</p>
+      <input type="password" id="masterPinInput" inputmode="numeric" maxlength="12" placeholder="PIN" autofocus>
+      <button onclick="prihlasitMaster()">Odemknout</button>
+      <div class="lock-msg" id="masterLockMsg"></div>
+    </div>
+  </div>
+
+  <div class="topbar">
+    <a href="realitni-leady.html">← Realitní leady</a>
+    <div class="title">4fin // Statistiky</div>
+  </div>
+  <div class="wrap">
+    <h1>Statistiky realitních leadů</h1>
+
+    <div class="card">
+      <div class="card-title">Telefonista — celkem</div>
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-num" id="stPoslano">—</div><div class="stat-label">Poslaných kontaktů</div></div>
+        <div class="stat-box"><div class="stat-num" id="stVytoceno">—</div><div class="stat-label">Vytočených</div></div>
+        <div class="stat-box"><div class="stat-num" id="stDovolano">—</div><div class="stat-label">Dovolaných</div></div>
+        <div class="stat-box"><div class="stat-num" id="stSchuzky">—</div><div class="stat-label">Domluvených schůzek</div></div>
+      </div>
+
+      <div class="card-title">Telefonista — po obdobích</div>
+      <div class="tabs">
+        <button class="tab-btn active" id="tabTelDen" onclick="prepniObdobiTel('den')">Denně</button>
+        <button class="tab-btn" id="tabTelTyden" onclick="prepniObdobiTel('tyden')">Týdně</button>
+        <button class="tab-btn" id="tabTelMesic" onclick="prepniObdobiTel('mesic')">Měsíčně</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Období</th><th class="num">Posláno</th><th class="num">Vytočeno</th><th class="num">Dovoláno</th>
+            <th class="num">Nezvedlo</th><th class="num">Odmítlo</th><th class="num">% dovoláno</th><th class="num">Schůzky</th><th class="num">Trend schůzek</th>
+          </tr>
+        </thead>
+        <tbody id="telBody"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Poradci — po obdobích</div>
+      <div class="tabs">
+        <button class="tab-btn active" id="tabPorDen" onclick="prepniObdobiPor('den')">Denně</button>
+        <button class="tab-btn" id="tabPorTyden" onclick="prepniObdobiPor('tyden')">Týdně</button>
+        <button class="tab-btn" id="tabPorMesic" onclick="prepniObdobiPor('mesic')">Měsíčně</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Období</th><th>Poradce</th><th class="num">Předané</th><th class="num">Potvrzené</th>
+            <th class="num">Uskutečněné</th><th class="num">Bud. analýza</th><th class="num">OB</th><th class="num">Peníze</th>
+          </tr>
+        </thead>
+        <tbody id="porObdobiBody"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Peníze — uskutečněné schůzky</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Datum</th><th>Klient</th><th>Poradce</th><th class="num">OB</th><th>Peníze (Kč)</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="penizeBody"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Poradci — celkem (od začátku)</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Poradce</th><th class="num">Předané</th><th class="num">Potvrzené</th>
+            <th class="num">Uskutečněné</th><th class="num">Analýzy</th><th class="num">Bud. analýza</th>
+            <th class="num">OB</th><th class="num">Peníze</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="poradciBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyqnJsAlmzOAntypivM5oiLt8twpNJkJrUaK4D-rkvQPzFC_btwUrC8ivasYrnWbdsM6g/exec?token=6696d0e4ae4d7f0d73530fbd67961aeb2d823f69&admin_key=8e95a6c02cd185782552ec71b5bc712bf4cdb792' + (sessionStorage.getItem('master_pin_4fin') ? '&master_pin=' + encodeURIComponent(sessionStorage.getItem('master_pin_4fin')) : '');
+
+let DENNI_TEL = [];
+let DENNI_POR = [];
+let obdobiTel = 'den';
+let obdobiPor = 'den';
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function getTydenKlic(den){
+  const d = new Date(den + 'T00:00:00');
+  const day = d.getDay() || 7;
+  d.setDate(d.getDate() - day + 1);
+  return d.toISOString().slice(0,10);
+}
+function getMesicKlic(den){ return den.slice(0,7); }
+
+function klicProObdobi(den, typ){
+  if(typ === 'tyden') return getTydenKlic(den);
+  if(typ === 'mesic') return getMesicKlic(den);
+  return den;
+}
+function popisekObdobi(klic, typ){
+  if(typ === 'tyden') return 'Týden od ' + klic;
+  if(typ === 'mesic'){
+    const [y,m] = klic.split('-');
+    return m + '/' + y;
+  }
+  return klic;
+}
+
+async function nacti(){
+  try{
+    const res1 = await fetch(SCRIPT_URL + '&action=getStatistikyTelefonisty');
+    const t = await res1.json();
+    document.getElementById('stPoslano').textContent = t.poslano ?? 0;
+    document.getElementById('stVytoceno').textContent = t.vytoceno ?? 0;
+    document.getElementById('stDovolano').textContent = t.dovolano ?? 0;
+    document.getElementById('stSchuzky').textContent = t.schuzky ?? 0;
+  }catch(e){ console.log(e); }
+
+  try{
+    const res2 = await fetch(SCRIPT_URL + '&action=getStatistikyPoradcu');
+    renderPoradciCelkem(await res2.json());
+  }catch(e){ console.log(e); }
+
+  try{
+    const res2b = await fetch(SCRIPT_URL + '&action=getRealitniSchuzky');
+    const vsechny = await res2b.json();
+    renderPenize(Array.isArray(vsechny) ? vsechny.filter(s => s.uskutecnilaSe === 'ANO') : []);
+  }catch(e){ console.log(e); }
+
+  try{
+    const res3 = await fetch(SCRIPT_URL + '&action=getDenniStatistikyTelefonisty');
+    DENNI_TEL = await res3.json();
+    renderTelObdobi();
+  }catch(e){ console.log(e); DENNI_TEL = []; }
+
+  try{
+    const res4 = await fetch(SCRIPT_URL + '&action=getDenniStatistikyPoradcu');
+    DENNI_POR = await res4.json();
+    renderPorObdobi();
+  }catch(e){ console.log(e); DENNI_POR = []; }
+}
+
+function prepniObdobiTel(typ){
+  obdobiTel = typ;
+  ['Den','Tyden','Mesic'].forEach(t => document.getElementById('tabTel'+t).classList.remove('active'));
+  document.getElementById('tabTel' + (typ==='den'?'Den':typ==='tyden'?'Tyden':'Mesic')).classList.add('active');
+  renderTelObdobi();
+}
+function prepniObdobiPor(typ){
+  obdobiPor = typ;
+  ['Den','Tyden','Mesic'].forEach(t => document.getElementById('tabPor'+t).classList.remove('active'));
+  document.getElementById('tabPor' + (typ==='den'?'Den':typ==='tyden'?'Tyden':'Mesic')).classList.add('active');
+  renderPorObdobi();
+}
+
+function renderTelObdobi(){
+  const bucket = {};
+  DENNI_TEL.forEach(d => {
+    const k = klicProObdobi(d.den, obdobiTel);
+    if(!bucket[k]) bucket[k] = {klic:k, poslano:0, vytoceno:0, dovolano:0, nezvedlo:0, odmitlo:0, schuzky:0};
+    const b = bucket[k];
+    b.poslano += d.poslano; b.vytoceno += d.vytoceno; b.dovolano += d.dovolano;
+    b.nezvedlo += d.nezvedlo; b.odmitlo += d.odmitlo; b.schuzky += d.schuzky;
+  });
+  const periody = Object.keys(bucket).sort().reverse();
+  const tbody = document.getElementById('telBody');
+  if(!periody.length){ tbody.innerHTML = '<tr><td colspan="9" style="color:var(--text3);">Zatím žádná data.</td></tr>'; return; }
+  tbody.innerHTML = periody.map((k, i) => {
+    const b = bucket[k];
+    const pct = b.vytoceno ? Math.round(b.dovolano / b.vytoceno * 100) : 0;
+    const predchozi = bucket[periody[i+1]];
+    let trend = '<span class="trend-flat">→</span>';
+    if(predchozi){
+      if(b.schuzky > predchozi.schuzky) trend = '<span class="trend-up">↑ roste</span>';
+      else if(b.schuzky < predchozi.schuzky) trend = '<span class="trend-down">↓ klesá</span>';
+    }
+    return `<tr>
+      <td>${esc(popisekObdobi(k, obdobiTel))}</td>
+      <td class="num">${b.poslano}</td><td class="num">${b.vytoceno}</td><td class="num">${b.dovolano}</td>
+      <td class="num">${b.nezvedlo}</td><td class="num">${b.odmitlo}</td><td class="num">${pct}%</td>
+      <td class="num">${b.schuzky}</td><td class="num">${trend}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderPorObdobi(){
+  const bucket = {};
+  DENNI_POR.forEach(d => {
+    const k = klicProObdobi(d.den, obdobiPor);
+    const klicPlny = k + '|' + d.poradce;
+    if(!bucket[klicPlny]) bucket[klicPlny] = {klic:k, poradce:d.poradce, predane:0, potvrzene:0, uskutecnene:0, budouciAnalyzy:0, obchodniBody:0, penize:0};
+    const b = bucket[klicPlny];
+    b.predane += d.predane; b.potvrzene += d.potvrzene; b.uskutecnene += d.uskutecnene;
+    b.budouciAnalyzy += d.budouciAnalyzy; b.obchodniBody += d.obchodniBody; b.penize += d.penize;
+  });
+  const radky = Object.values(bucket).sort((a,b) => b.klic.localeCompare(a.klic) || a.poradce.localeCompare(b.poradce));
+  const tbody = document.getElementById('porObdobiBody');
+  if(!radky.length){ tbody.innerHTML = '<tr><td colspan="8" style="color:var(--text3);">Zatím žádná data.</td></tr>'; return; }
+  tbody.innerHTML = radky.map(b => `
+    <tr>
+      <td>${esc(popisekObdobi(b.klic, obdobiPor))}</td>
+      <td>${esc(b.poradce)}</td>
+      <td class="num">${b.predane}</td><td class="num">${b.potvrzene}</td><td class="num">${b.uskutecnene}</td>
+      <td class="num">${b.budouciAnalyzy}</td><td class="num">${b.obchodniBody}</td><td class="num">${b.penize.toLocaleString('cs-CZ')} Kč</td>
+    </tr>
+  `).join('');
+}
+
+function renderPenize(schuzky){
+  const tbody = document.getElementById('penizeBody');
+  if(!schuzky.length){ tbody.innerHTML = '<tr><td colspan="6" style="color:var(--text3);">Zatím žádné uskutečněné schůzky.</td></tr>'; return; }
+  const razene = [...schuzky].sort((a,b) => b.datumPridani.localeCompare(a.datumPridani));
+  tbody.innerHTML = razene.map(s => `
+    <tr>
+      <td>${esc(s.datumPridani.slice(0,10))}</td>
+      <td>${esc(s.klientJmeno)}</td>
+      <td>${esc(s.prideleno)}</td>
+      <td class="num">${s.obchodniBody}</td>
+      <td><input type="number" min="0" value="${s.penize||0}" style="width:100px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:5px 8px;font-family:var(--mono);font-size:12px;" id="penize-${s.id}"></td>
+      <td><button onclick="ulozitPenize('${s.id}')" style="background:var(--accent);color:var(--bg);border:none;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;">Uložit</button></td>
+    </tr>
+  `).join('');
+}
+
+async function ulozitPenize(id){
+  const penize = document.getElementById('penize-'+id).value;
+  try{
+    await fetch(SCRIPT_URL, {
+      method:'POST', headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({ action:'nastavPenizeSchuzky', id, penize })
+    });
+  }catch(e){ console.log(e); }
+}
+
+function renderPoradciCelkem(data){
+  const tbody = document.getElementById('poradciBody');
+  const jmena = Object.keys(data).sort((a,b) => data[b].predane - data[a].predane);
+  if(!jmena.length){ tbody.innerHTML = '<tr><td colspan="9" style="color:var(--text3);">Zatím žádná data.</td></tr>'; return; }
+  tbody.innerHTML = jmena.map((jmeno, i) => {
+    const d = data[jmeno];
+    const duvodyId = 'duvody-' + i;
+    const duvodyHtml = d.duvody.length
+      ? `<span class="duvody-toggle" onclick="document.getElementById('${duvodyId}').classList.toggle('open')">${d.duvody.length} důvodů</span>
+         <div class="duvody-list" id="${duvodyId}">${d.duvody.map(esc).join('<br><br>')}</div>`
+      : '—';
+    return `
+      <tr>
+        <td>${esc(jmeno)}</td>
+        <td class="num">${d.predane}</td>
+        <td class="num">${d.potvrzene}</td>
+        <td class="num">${d.uskutecnene}</td>
+        <td class="num">${d.analyzy}</td>
+        <td class="num">${d.budouciAnalyzy}</td>
+        <td class="num">${d.obchodniBody}</td>
+        <td class="num">${d.penize.toLocaleString('cs-CZ')} Kč</td>
+        <td>${duvodyHtml}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  nacti();
+  if (sessionStorage.getItem('master_pin_4fin')) {
+    const el = document.getElementById('masterLock');
+    if (el) el.style.display = 'none';
+  }
+});
+
+async function prihlasitMaster(){
+  const pin = document.getElementById('masterPinInput').value.trim();
+  const msg = document.getElementById('masterLockMsg');
+  if(!pin){ msg.textContent = 'Zadej PIN.'; return; }
+  msg.textContent = 'Ověřuji...';
+  try{
+    const baseUrl = SCRIPT_URL.split('&master_pin=')[0];
+    const res = await fetch(baseUrl, {
+      method:'POST', headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({action:'prihlaseniMaster', pin})
+    });
+    const data = await res.json();
+    if(data.ok){
+      sessionStorage.setItem('master_pin_4fin', pin);
+      location.reload();
+    } else {
+      msg.textContent = 'Špatný PIN.';
+    }
+  }catch(e){ msg.textContent = 'Chyba připojení.'; console.log(e); }
+}
+</script>
+</body>
+</html>
