@@ -1,0 +1,2832 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="4fin Nábor">
+<title>4fin OS | Náborová evidence</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg:        #0d0f14;
+    --surface:   #151820;
+    --surface2:  #1c2030;
+    --surface3:  #232838;
+    --border:    #252a3a;
+    --accent:    #c8a96e;
+    --accent2:   #e8c98e;
+    --green:     #4caf82;
+    --red:       #e05252;
+    --blue:      #5b8dee;
+    --text:      #e8eaf0;
+    --text2:     #8892a4;
+    --text3:     #555f72;
+    --radius:    10px;
+    --mono:      'JetBrains Mono', monospace;
+    --sans:      'Inter', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+    padding-bottom: 60px;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 20px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    font-weight: 500;
+    text-decoration: none;
+  }
+  .logo span { color: var(--text3); }
+  .back-link {
+    font-size: 12px;
+    color: var(--text2);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .back-link:active { color: var(--accent); }
+
+  .shell {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 24px 16px 80px;
+  }
+
+  .page-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .page-sub {
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 28px;
+  }
+
+  /* ── VIEW SWITCHING ── */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ── MANAGER GRID (home view) ── */
+  .manager-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .manager-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 16px;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.1s;
+    text-align: left;
+  }
+  .manager-card:active { transform: scale(0.98); border-color: var(--accent); }
+  .manager-initials {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 500;
+    margin-bottom: 12px;
+  }
+  .manager-name {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .manager-count {
+    font-size: 12px;
+    color: var(--text2);
+    font-family: var(--mono);
+  }
+  .manager-count strong { color: var(--accent2); font-weight: 600; }
+
+  /* ── CANDIDATE LIST (manager view) ── */
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .candidate-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+  .candidate-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: border-color 0.15s;
+  }
+  .candidate-card:active { border-color: var(--accent); }
+  .candidate-info { flex: 1; min-width: 0; }
+  .candidate-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .candidate-meta { font-size: 12px; color: var(--text2); }
+  .candidate-meta span { color: var(--text3); margin: 0 4px; }
+  .candidate-next {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text2);
+    text-align: right;
+    flex-shrink: 0;
+    margin-left: 12px;
+    white-space: nowrap;
+  }
+  .candidate-next.upcoming { color: var(--green); }
+  .candidate-last {
+    text-align: right;
+    flex-shrink: 0;
+    margin-left: 12px;
+    white-space: nowrap;
+  }
+  .candidate-last-date {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .candidate-last-date.stale { color: var(--red); }
+  .candidate-last-date.warn { color: var(--accent2); }
+  .candidate-last-label {
+    font-size: 9px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 2px;
+  }
+  .candidate-cols {
+    display: flex;
+    gap: 18px;
+    flex-shrink: 0;
+    margin-left: 12px;
+  }
+  .candidate-col-label {
+    font-size: 9px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 3px;
+    text-align: right;
+  }
+  .candidate-col-value {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: right;
+    white-space: nowrap;
+  }
+  .candidate-col-value.empty { color: var(--text3); font-weight: 400; }
+  .candidate-col-value.next { color: var(--green); }
+  .candidate-col-value.stale-text { color: var(--red); }
+  .candidate-col-value.warn-text { color: var(--accent2); }
+  .candidate-arrow { color: var(--text3); margin-left: 8px; flex-shrink: 0; }
+  .pdf-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    border-radius: 6px;
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-left: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .pdf-btn:active { border-color: var(--accent); color: var(--accent); }
+
+  .empty-state {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--text3);
+    font-size: 13px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 8px;
+    padding: 13px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: var(--sans);
+    cursor: pointer;
+    width: 100%;
+  }
+  .btn:active { background: var(--accent2); }
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:active { border-color: var(--accent); background: var(--surface2); }
+  .btn-row { display: flex; gap: 10px; }
+  .btn-row .btn { width: auto; flex: 1; }
+
+  /* ── CANDIDATE DETAIL ── */
+  .detail-header {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .detail-name { font-size: 19px; font-weight: 700; margin-bottom: 8px; }
+  .detail-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+  .tag {
+    font-size: 11px;
+    color: var(--text2);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-family: var(--mono);
+  }
+
+  .meeting-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+  .meeting-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    cursor: pointer;
+  }
+  .meeting-card:active { border-color: var(--accent); }
+  .meeting-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .meeting-date {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent2);
+    font-weight: 500;
+  }
+  .meeting-place { font-size: 11px; color: var(--text3); }
+  .meeting-preview {
+    font-size: 12px;
+    color: var(--text2);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .stat-value {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .stat-pct {
+    font-size: 12px;
+    color: var(--text2);
+    margin-left: 6px;
+  }
+  .stat-label {
+    font-size: 11px;
+    color: var(--text2);
+    margin-top: 4px;
+  }
+
+  .komm-card.autor-kontakt { border-left: 3px solid var(--blue); }
+  .komm-card.autor-martin { border-left: 3px solid var(--accent); }
+  .komm-author {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .komm-author.autor-kontakt { color: var(--blue); }
+  .komm-author.autor-martin { color: var(--accent); }
+
+  .next-meeting-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--green);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+  }
+  .next-meeting-label {
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+  }
+  .next-meeting-date {
+    font-family: var(--mono);
+    font-size: 15px;
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  /* ── FORMS ── */
+  .form-group { margin-bottom: 16px; }
+  .form-label {
+    display: block;
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  .form-input, .form-textarea, .form-select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: var(--sans);
+  }
+  .form-input:focus, .form-textarea:focus, .form-select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .form-textarea { min-height: 100px; resize: vertical; line-height: 1.5; }
+  .form-row { display: flex; gap: 10px; }
+  .form-row .form-group { flex: 1; }
+
+  /* ── MODAL / OVERLAY FORM ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 200;
+    overflow-y: auto;
+  }
+  .modal-overlay.active { display: block; }
+  .modal-box {
+    background: var(--bg);
+    min-height: 100vh;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .modal-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 16px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+  }
+  .modal-title { font-size: 15px; font-weight: 600; }
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--text2);
+    font-size: 22px;
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+  .modal-body { padding: 20px 16px 100px; }
+
+  .fab {
+    position: fixed;
+    bottom: 24px;
+    right: 50%;
+    transform: translateX(360px);
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 50%;
+    width: 56px; height: 56px;
+    font-size: 26px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    cursor: pointer;
+    z-index: 50;
+  }
+  @media (max-width: 760px) {
+    .fab { right: 20px; transform: none; }
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--surface3);
+    border: 1px solid var(--accent);
+    color: var(--text);
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    z-index: 300;
+    transition: transform 0.25s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+
+  .loading-spinner {
+    width: 16px; height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .sync-status {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* ── PRINT / PDF EXPORT ── */
+  #printArea, #printAreaList, #printAreaLinkedin, #printAreaLinkedinList, #printAreaLinkedinCalling { display: none; }
+  @media print {
+    body * { visibility: hidden; }
+    #printArea.print-active, #printArea.print-active *,
+    #printAreaList.print-active, #printAreaList.print-active *,
+    #printAreaLinkedin.print-active, #printAreaLinkedin.print-active *,
+    #printAreaLinkedinList.print-active, #printAreaLinkedinList.print-active *,
+    #printAreaLinkedinCalling.print-active, #printAreaLinkedinCalling.print-active * { visibility: visible; }
+    #printArea.print-active, #printAreaList.print-active, #printAreaLinkedin.print-active, #printAreaLinkedinList.print-active, #printAreaLinkedinCalling.print-active {
+      display: block;
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      background: #fff;
+      color: #111;
+      padding: 40px;
+      font-family: Arial, sans-serif;
+    }
+    #printArea .p-eyebrow {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #a07a3f;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    #printArea .p-name {
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 18px;
+      color: #111;
+    }
+    #printArea .p-row {
+      display: flex;
+      padding: 10px 0;
+      border-bottom: 1px solid #ddd;
+    }
+    #printArea .p-label {
+      width: 180px;
+      font-size: 12px;
+      color: #777;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    #printArea .p-value {
+      flex: 1;
+      font-size: 14px;
+      color: #111;
+      white-space: pre-wrap;
+    }
+    #printArea .p-footer {
+      margin-top: 30px;
+      font-size: 11px;
+      color: #999;
+    }
+    #printArea .p-meetings-title {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #a07a3f;
+      font-weight: 700;
+      margin-top: 28px;
+      margin-bottom: 12px;
+    }
+    #printArea .p-meeting, #printAreaLinkedin .p-meeting {
+      page-break-inside: avoid;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+    }
+    #printAreaLinkedin .p-meeting-martin {
+      border: 1px solid #e8d9b8;
+      border-left: 4px solid #a07a3f;
+      background: #faf6ee;
+      margin-right: 40px;
+    }
+    #printAreaLinkedin .p-meeting-kontakt {
+      border: 1px solid #c9dcf0;
+      border-left: 4px solid #4a7fc1;
+      background: #eef4fb;
+      margin-left: 40px;
+    }
+    #printArea .p-meeting-author, #printAreaLinkedin .p-meeting-author {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #777;
+      margin-bottom: 4px;
+    }
+    #printArea .p-meeting-head {
+      font-size: 12px;
+      font-weight: 700;
+      color: #111;
+      margin-bottom: 6px;
+    }
+    #printArea .p-meeting-desc {
+      font-size: 12px;
+      color: #333;
+      white-space: pre-wrap;
+      line-height: 1.5;
+    }
+    #printArea .p-meeting-next {
+      font-size: 11px;
+      color: #a07a3f;
+      margin-top: 6px;
+      font-weight: 600;
+    }
+    #printArea .p-meeting-empty {
+      font-size: 12px;
+      color: #999;
+      font-style: italic;
+    }
+    #printAreaList table, #printAreaLinkedinList table, #printAreaLinkedinCalling table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+    }
+    #printAreaList th, #printAreaLinkedinList th, #printAreaLinkedinCalling th {
+      text-align: left;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #777;
+      padding: 8px 10px;
+      border-bottom: 2px solid #ccc;
+    }
+    #printAreaList td, #printAreaLinkedinList td, #printAreaLinkedinCalling td {
+      font-size: 12px;
+      color: #222;
+      padding: 9px 10px;
+      border-bottom: 1px solid #e5e5e5;
+      vertical-align: top;
+    }
+    #printAreaList tr, #printAreaLinkedinList tr, #printAreaLinkedinCalling tr { page-break-inside: avoid; }
+  }
+  /* ── ATTACHMENTS ── */
+  .attach-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+  .attach-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .attach-icon { font-size: 16px; flex-shrink: 0; }
+  .attach-info { flex: 1; min-width: 0; }
+  .attach-name {
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .attach-date { font-size: 11px; color: var(--text3); font-family: var(--mono); }
+  .attach-remove {
+    background: none;
+    border: none;
+    color: var(--text3);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px 6px;
+    flex-shrink: 0;
+  }
+  .attach-remove:active { color: var(--red); }
+  .btn-danger-ghost {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--red);
+  }
+  .btn-danger-ghost:active { border-color: var(--red); background: rgba(224,82,82,0.08); }
+
+  .master-lock{position:fixed;inset:0;background:#0d0f14;z-index:9999;display:flex;align-items:center;justify-content:center;}
+  .master-lock-box{background:#151820;border:1px solid #252a3a;border-radius:14px;padding:32px 28px;max-width:340px;width:90%;text-align:center;}
+  .master-lock-box .lock-icon{font-size:32px;margin-bottom:12px;}
+  .master-lock-box h2{font-size:16px;color:#e8eaf0;margin:0 0 6px;}
+  .master-lock-box p{font-size:12px;color:#8892a4;margin:0 0 18px;line-height:1.5;}
+  .master-lock-box input{width:100%;background:#1c2030;border:1.5px solid #252a3a;border-radius:8px;color:#e8eaf0;font-family:'JetBrains Mono',monospace;font-size:18px;letter-spacing:0.3em;text-align:center;padding:12px;outline:none;margin-bottom:12px;}
+  .master-lock-box input:focus{border-color:#c8a96e;}
+  .master-lock-box button{width:100%;background:#c8a96e;color:#0d0f14;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;}
+  .master-lock-box .lock-msg{font-size:12px;color:#e05252;margin-top:10px;min-height:16px;}
+</style>
+</head>
+<body>
+  <div class="master-lock" id="masterLock">
+    <div class="master-lock-box">
+      <div class="lock-icon">🔒</div>
+      <h2>Přístup jen pro Martina</h2>
+      <p>Zadej master PIN. Po 5 špatných pokusech se zamkne a odemkne jen ručně v Apps Scriptu.</p>
+      <input type="password" id="masterPinInput" inputmode="numeric" maxlength="12" placeholder="PIN" autofocus>
+      <button onclick="prihlasitMaster()">Odemknout</button>
+      <div class="lock-msg" id="masterLockMsg"></div>
+    </div>
+  </div>
+
+
+<header>
+  <a href="index.html" class="back-link">← <span class="logo">4fin<span> OS</span></span></a>
+  <div class="sync-status" id="syncStatus">●&nbsp;připraveno</div>
+</header>
+
+<div class="shell">
+
+  <!-- VIEW 1: Manager overview -->
+  <div class="view active" id="view-home">
+    <div class="page-title">Náborová evidence</div>
+    <div class="page-sub">Přehled rozpracovaných náborů podle manažera</div>
+    <div class="manager-grid" id="managerGrid"></div>
+    <button class="btn btn-secondary" id="goToLinkedinBtn" style="margin-top:16px;">📇 LinkedIn oslovení</button>
+    <div id="followUpTodaySection" style="display:none;margin-top:24px;">
+      <div class="section-label">Dnes je potřeba oslovit</div>
+      <div class="candidate-list" id="followUpTodayList"></div>
+    </div>
+    <div id="archivaceNavrzenoSection" style="display:none;margin-top:24px;">
+      <div class="section-label">Navrženo k archivaci (přes 90 dní bez odpovědi)</div>
+      <div class="candidate-list" id="archivaceNavrzenoList"></div>
+    </div>
+  </div>
+
+  <!-- VIEW 2: Candidate list for a manager -->
+  <div class="view" id="view-manager">
+    <a href="#" class="back-link" id="backToHome" style="margin-bottom:16px;display:inline-flex;">← Zpět na manažery</a>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+      <div>
+        <div class="page-title" id="managerTitle">—</div>
+        <div class="page-sub" id="managerSub">Kandidáti seřazení od nejdéle opomíjených</div>
+      </div>
+      <button class="pdf-btn" id="printManagerListBtn" title="Tisk celého seznamu" style="width:auto;padding:0 14px;height:36px;gap:6px;font-size:12px;">⬇ Tisk seznamu</button>
+    </div>
+    <div class="section-label">Kandidáti</div>
+    <div class="candidate-list" id="candidateList"></div>
+    <button class="btn" id="addCandidateBtn">+ Přidat kandidáta</button>
+  </div>
+
+  <!-- VIEW 3: Candidate detail -->
+  <div class="view" id="view-candidate">
+    <a href="#" class="back-link" id="backToManager" style="margin-bottom:16px;display:inline-flex;">← Zpět na seznam</a>
+    <div class="detail-header">
+      <div class="detail-name" id="candDetailName">—</div>
+      <div class="detail-tags">
+        <span class="tag" id="candDetailOrigin">—</span>
+        <span class="tag" id="candDetailCompany">—</span>
+        <span class="tag" id="candDetailPosition">—</span>
+        <span class="tag" id="candDetailMeetingCount">0 schůzek</span>
+      </div>
+      <div id="candDetailProblemBox" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+        <div class="form-label" style="margin-bottom:6px;">Problematický stav</div>
+        <div id="candDetailProblem" style="font-size:13px;color:var(--text2);line-height:1.6;white-space:pre-wrap;"></div>
+      </div>
+    </div>
+
+    <div id="nextMeetingBox" style="display:none;" class="next-meeting-box">
+      <div class="next-meeting-label">Příští schůzka</div>
+      <div class="next-meeting-date" id="nextMeetingDate">—</div>
+    </div>
+
+    <div class="section-label">Přílohy</div>
+    <div class="attach-list" id="attachList"></div>
+    <input type="file" id="fileAttachInput" style="display:none;">
+    <button class="btn btn-secondary" id="addAttachBtn" style="margin-bottom:20px;">+ Přidat přílohu</button>
+
+    <div class="section-label" id="meetingHistoryLabel">Historie schůzek</div>
+    <div class="meeting-list" id="meetingList"></div>
+    <div class="btn-row">
+      <button class="btn" id="addMeetingBtn">+ Přidat schůzku</button>
+      <button class="btn btn-secondary" id="editCandidateBtn">Upravit</button>
+    </div>
+    <button class="btn btn-secondary" id="exportPdfBtn" style="margin-top:10px;">⬇ Exportovat do PDF</button>
+    <button class="btn btn-danger-ghost" id="hideCandidateBtn" style="margin-top:10px;">Skrýt kandidáta</button>
+  </div>
+
+  <!-- VIEW 4: LinkedIn oslovení — list -->
+  <div class="view" id="view-linkedin">
+    <a href="#" class="back-link" id="backToHomeFromLinkedin" style="margin-bottom:16px;display:inline-flex;">← Zpět na manažery</a>
+    <div class="page-title">LinkedIn oslovení</div>
+    <div class="page-sub">Kontakty oslovené s nabídkou spolupráce / náboru</div>
+
+    <div class="section-label">Statistika</div>
+    <div id="linkedinStatsGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;"></div>
+
+    <div class="section-label">Vývoj v čase (posledních 8 týdnů)</div>
+    <div id="linkedinTrendChart" style="margin-bottom:20px;"></div>
+
+    <div class="section-label">Podle kategorie</div>
+    <div id="linkedinCategoryStats" style="margin-bottom:20px;"></div>
+
+    <div class="section-label">Kontakty</div>
+    <div class="form-group">
+      <label class="form-label">Hledat podle jména</label>
+      <input type="text" class="form-input" id="linkedinSearchInput" placeholder="Napiš jméno…">
+    </div>
+    <div id="linkedinFilterRow" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">
+      <button class="btn btn-secondary" data-filter="" style="width:auto;padding:8px 12px;font-size:12px;border-color:var(--accent);">Vše</button>
+      <button class="btn btn-secondary" data-filter="bez_odpovedi" style="width:auto;padding:8px 12px;font-size:12px;">Bez odpovědi</button>
+      <button class="btn btn-secondary" data-filter="zajem" style="width:auto;padding:8px 12px;font-size:12px;">Zájem</button>
+      <button class="btn btn-secondary" data-filter="nezajem" style="width:auto;padding:8px 12px;font-size:12px;">Nezájem</button>
+      <button class="btn btn-secondary" data-filter="domluveno" style="width:auto;padding:8px 12px;font-size:12px;">Domluveno</button>
+      <button class="btn btn-secondary" data-filter="archived" style="width:auto;padding:8px 12px;font-size:12px;">Archiv</button>
+    </div>
+    <div class="candidate-list" id="linkedinList"></div>
+    <div class="form-group">
+      <label class="form-label">Řazení</label>
+      <select class="form-select" id="linkedinSortSelect">
+        <option value="nejnovejsi">Nejnovější oslovení první</option>
+        <option value="nejstarsi">Nejstarší oslovení první</option>
+        <option value="kategorie">Podle kategorie</option>
+        <option value="stav">Podle stavu</option>
+      </select>
+    </div>
+    <button class="btn btn-secondary" id="quickSelectCallableBtn" style="margin-bottom:10px;">Vybrat: má telefon a ještě neobvoláno</button>
+    <div class="btn-row" style="margin-bottom:10px;">
+      <button class="btn btn-secondary" id="downloadSelectedBtn" disabled>⬇ Stáhnout vybrané (0)</button>
+      <button class="btn btn-secondary" id="clearSelectionBtn">Zrušit výběr</button>
+    </div>
+    <button class="btn btn-secondary" id="markSelectedCalledBtn" style="margin-bottom:10px;">✓ Označit vybrané jako obvolané dnes</button>
+    <div class="btn-row">
+      <button class="btn" id="addLinkedinBtn">+ Přidat kontakt</button>
+      <button class="btn btn-secondary" id="addOdpovedBtn">+ Přidat odpověď</button>
+    </div>
+    <button class="btn btn-secondary" id="exportLinkedinListBtn" style="margin-top:10px;">⬇ Export všech kontaktů</button>
+  </div>
+
+  <!-- VIEW 5: LinkedIn contact detail -->
+  <div class="view" id="view-linkedin-detail">
+    <a href="#" class="back-link" id="backToLinkedinList" style="margin-bottom:16px;display:inline-flex;">← Zpět na seznam</a>
+    <div class="detail-header">
+      <div class="detail-name" id="liDetailName">—</div>
+      <div class="detail-tags">
+        <span class="tag" id="liDetailPozice">—</span>
+        <span class="tag" id="liDetailStav">—</span>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;">
+      <input type="checkbox" id="liOdpovedel" style="width:20px;height:20px;flex-shrink:0;">
+      <label for="liOdpovedel" style="font-size:13px;color:var(--text);cursor:pointer;">Odpověděl(a) — pokud nezaškrtnuto, počítá se jako "neodpověděl(a)"</label>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;">
+      <input type="checkbox" id="liObvolano" style="width:20px;height:20px;flex-shrink:0;">
+      <label for="liObvolano" style="font-size:13px;color:var(--text);cursor:pointer;">Obvoláno <span id="liObvolanoDatumLabel" style="color:var(--text3);"></span></label>
+    </div>
+
+    <div class="section-label">Rychlý stav</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;">
+      <button class="btn btn-secondary" style="flex:1 1 45%;" onclick="setLinkedinStav('bez_odpovedi')">Bez odpovědi</button>
+      <button class="btn btn-secondary" style="flex:1 1 45%;" onclick="setLinkedinStav('zajem')">Zájem — dal telefon</button>
+      <button class="btn btn-secondary" style="flex:1 1 45%;" onclick="setLinkedinStav('nezajem')">Nezájem zatím</button>
+      <button class="btn btn-secondary" style="flex:1 1 45%;" onclick="setLinkedinStav('domluveno')">Domluven hovor</button>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Kategorie (pro statistiku)</label>
+      <select class="form-select" id="liKategorie">
+        <option value="">Nevybráno</option>
+        <option value="konkurence">Konkurence (Partners, Broker Consulting...)</option>
+        <option value="banka">Banka</option>
+        <option value="pojistovna">Pojišťovna</option>
+        <option value="reality">Reality</option>
+        <option value="jine">Jiné</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Telefon</label>
+      <input type="text" class="form-input" id="liTelefon" placeholder="+420…">
+      <div id="liCallLinkWrap" style="margin-top:8px;"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">E-mail</label>
+      <input type="text" class="form-input" id="liEmail" placeholder="jmeno@firma.cz">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Poznámka</label>
+      <textarea class="form-textarea" id="liPoznamka" style="min-height:70px;"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Termín dalšího follow-upu</label>
+      <input type="date" class="form-input" id="liFollowUp">
+    </div>
+    <button class="btn btn-secondary" id="saveLinkedinDetailBtn" style="margin-bottom:24px;">Uložit</button>
+
+    <div class="section-label">Historie stavu</div>
+    <div class="meeting-list" id="liStavHistorieList" style="margin-bottom:20px;"></div>
+
+    <div class="section-label">Poznámky z hovorů</div>
+    <div class="meeting-list" id="liHovoryList"></div>
+    <button class="btn btn-secondary" id="addHovorBtn" style="margin-bottom:24px;">+ Přidat poznámku z hovoru</button>
+
+    <div class="section-label">Historie komunikace</div>
+    <div class="meeting-list" id="liZpravyList"></div>
+    <div class="btn-row" style="margin-bottom:10px;">
+      <button class="btn" id="addZpravaMartinBtn">+ Naše zpráva</button>
+      <button class="btn btn-secondary" id="addZpravaOdpovedBtn">+ Jejich odpověď</button>
+    </div>
+    <button class="btn btn-secondary" id="printKomunikaceBtn" style="margin-bottom:10px;">⬇ Tisk komunikace</button>
+    <button class="btn btn-secondary" id="presunoutDoNaboruBtn" style="margin-bottom:10px;">→ Přesunout do Náboru</button>
+    <button class="btn btn-secondary" id="toggleArchivBtn" style="margin-bottom:10px;">🗄 Archivovat kontakt</button>
+    <button class="btn btn-danger-ghost" id="deleteLinkedinBtn" style="margin-top:10px;">Smazat kontakt</button>
+  </div>
+
+</div>
+
+<!-- MODAL: Add candidate -->
+<div class="modal-overlay" id="modalCandidate">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="modalCandidateTitle">Nový kandidát</div>
+      <button class="modal-close" data-close="modalCandidate">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Jméno</label>
+          <input type="text" class="form-input" id="fJmeno" placeholder="Jan">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Příjmení</label>
+          <input type="text" class="form-input" id="fPrijmeni" placeholder="Novák">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Město působnosti</label>
+        <input type="text" class="form-input" id="fOdkud" placeholder="např. Praha, Brno, Ostrava…">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Společnost</label>
+        <input type="text" class="form-input" id="fSpolecnost" placeholder="odkud kandidát přichází">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Pozice</label>
+        <input type="text" class="form-input" id="fPozice" placeholder="např. Konzultant, Senior konzultant">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Problematický stav</label>
+        <textarea class="form-textarea" id="fProblem" placeholder="V čem je kandidát problematický / co je potřeba řešit…" style="min-height:70px;"></textarea>
+      </div>
+      <button class="btn" id="saveCandidateBtn" style="margin-top:8px;">Uložit kandidáta</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add/edit meeting -->
+<div class="modal-overlay" id="modalMeeting">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="modalMeetingTitle">Nová schůzka</div>
+      <button class="modal-close" data-close="modalMeeting">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Datum schůzky</label>
+          <input type="date" class="form-input" id="fMeetDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Čas</label>
+          <input type="time" class="form-input" id="fMeetTime">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Místo schůzky</label>
+        <input type="text" class="form-input" id="fMeetPlace" placeholder="např. Kancelář Praha, kavárna…">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Co se na schůzce dělo</label>
+        <textarea class="form-textarea" id="fMeetDesc" placeholder="Popis průběhu schůzky…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Termín další schůzky (nepovinné)</label>
+        <input type="date" class="form-input" id="fNextDate">
+      </div>
+      <button class="btn" id="saveMeetingBtn" style="margin-top:8px;">Uložit schůzku</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Meeting detail (read) -->
+<div class="modal-overlay" id="modalMeetingView">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Detail schůzky</div>
+      <button class="modal-close" data-close="modalMeetingView">×</button>
+    </div>
+    <div class="modal-body" id="meetingViewBody"></div>
+  </div>
+</div>
+
+<!-- MODAL: Add reply from contact (matched by name) -->
+<div class="modal-overlay" id="modalPridatOdpoved">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Přidat odpověď od kontaktu</div>
+      <button class="modal-close" data-close="modalPridatOdpoved">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Rychlé přidání (vlož blok)</label>
+        <textarea class="form-textarea" id="odpovedQuickPaste" placeholder="JMÉNO: ...&#10;DATUM: ...&#10;ODPOVĚĎ: ..." style="min-height:140px;"></textarea>
+        <button class="btn btn-secondary" id="parseOdpovedBtn" style="margin-top:8px;">Najít kontakt a rozparsovat</button>
+      </div>
+      <div id="odpovedMatchInfo" style="font-size:13px;margin-bottom:12px;"></div>
+      <div style="border-top:1px solid var(--border);margin:16px 0;padding-top:16px;">
+        <div class="form-group">
+          <label class="form-label">Datum</label>
+          <input type="date" class="form-input" id="odpovedDatum">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Text odpovědi</label>
+          <textarea class="form-textarea" id="odpovedText" style="min-height:100px;"></textarea>
+        </div>
+      </div>
+      <button class="btn" id="saveOdpovedBtn">Uložit odpověď</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: New LinkedIn contact -->
+<div class="modal-overlay" id="modalLinkedinNew">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Nový LinkedIn kontakt</div>
+      <button class="modal-close" data-close="modalLinkedinNew">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Rychlé přidání (vlož blok od Claudea)</label>
+        <textarea class="form-textarea" id="liQuickPaste" placeholder="JMÉNO: ...&#10;POZICE: ...&#10;DATUM: ...&#10;ZPRÁVA: ..." style="min-height:140px;"></textarea>
+        <button class="btn btn-secondary" id="parseQuickAddBtn" style="margin-top:8px;">Rozparsovat do polí níže</button>
+      </div>
+      <div style="border-top:1px solid var(--border);margin:20px 0 16px;padding-top:16px;">
+        <div class="form-group">
+          <label class="form-label">Jméno</label>
+          <input type="text" class="form-input" id="liNewJmeno">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Pozice / firma</label>
+          <input type="text" class="form-input" id="liNewPozice">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kategorie (pro statistiku)</label>
+          <select class="form-select" id="liNewKategorie">
+            <option value="">Nevybráno</option>
+            <option value="konkurence">Konkurence (Partners, Broker Consulting...)</option>
+            <option value="banka">Banka</option>
+            <option value="pojistovna">Pojišťovna</option>
+            <option value="reality">Reality</option>
+            <option value="jine">Jiné</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Datum prvního oslovení</label>
+          <input type="date" class="form-input" id="liNewDatum">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Text zprávy</label>
+          <textarea class="form-textarea" id="liNewZprava" style="min-height:100px;"></textarea>
+        </div>
+      </div>
+      <button class="btn" id="saveLinkedinNewBtn">Uložit kontakt</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: New message to existing contact -->
+<div class="modal-overlay" id="modalZprava">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Nová zpráva</div>
+      <button class="modal-close" data-close="modalZprava">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Datum</label>
+        <input type="date" class="form-input" id="fZpravaDatum">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Text zprávy</label>
+        <textarea class="form-textarea" id="fZpravaText" style="min-height:120px;"></textarea>
+      </div>
+      <button class="btn" id="saveZpravaBtn" style="margin-top:8px;">Uložit zprávu</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Quick call note -->
+<div class="modal-overlay" id="modalHovor">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Poznámka z hovoru</div>
+      <button class="modal-close" data-close="modalHovor">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Datum</label>
+        <input type="date" class="form-input" id="fHovorDatum">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Jak hovor dopadl</label>
+        <textarea class="form-textarea" id="fHovorText" placeholder="Krátce, jak hovor proběhl…" style="min-height:90px;"></textarea>
+      </div>
+      <button class="btn" id="saveHovorBtn" style="margin-top:8px;">Uložit poznámku</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Domluvený termín (vytvoří i kalendářovou událost) -->
+<div class="modal-overlay" id="modalDomluveno">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Domluvený telefonát</div>
+      <button class="modal-close" data-close="modalDomluveno">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Datum</label>
+          <input type="date" class="form-input" id="fDomluvenoDatum">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Čas</label>
+          <input type="time" class="form-input" id="fDomluvenoCas" value="10:00">
+        </div>
+      </div>
+      <button class="btn" id="saveDomluvenoBtn" style="margin-top:8px;">Uložit a přidat do kalendáře</button>
+    </div>
+  </div>
+</div>
+
+<button class="fab" id="quickAddFab" style="display:none;">+</button>
+
+<div id="printArea">
+  <div class="p-eyebrow">4fin Better Together — Náborová evidence</div>
+  <div class="p-name" id="pName">—</div>
+  <div class="p-row"><div class="p-label">Město působnosti</div><div class="p-value" id="pOdkud">—</div></div>
+  <div class="p-row"><div class="p-label">Společnost</div><div class="p-value" id="pSpolecnost">—</div></div>
+  <div class="p-row"><div class="p-label">Pozice</div><div class="p-value" id="pPozice">—</div></div>
+  <div class="p-row"><div class="p-label">Problematický stav</div><div class="p-value" id="pProblem">—</div></div>
+  <div class="p-row"><div class="p-label">Regionální ředitel</div><div class="p-value" id="pManager">—</div></div>
+  <div class="p-meetings-title">Historie schůzek</div>
+  <div id="pMeetings"></div>
+  <div class="p-footer" id="pDate">—</div>
+</div>
+
+<div id="printAreaList">
+  <div class="p-eyebrow">4fin Better Together — Náborová evidence</div>
+  <div class="p-name" id="plManagerName">—</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Kandidát</th>
+        <th>Pozice</th>
+        <th>Společnost</th>
+        <th>Poslední schůzka</th>
+        <th>Další schůzka</th>
+        <th>Počet schůzek</th>
+      </tr>
+    </thead>
+    <tbody id="plTableBody"></tbody>
+  </table>
+  <div class="p-footer" id="plDate">—</div>
+</div>
+
+<div id="printAreaLinkedin">
+  <div class="p-eyebrow">4fin Better Together — LinkedIn oslovení</div>
+  <div class="p-name" id="pliName">—</div>
+  <div class="p-row"><div class="p-label">Pozice / firma</div><div class="p-value" id="pliPozice">—</div></div>
+  <div class="p-row"><div class="p-label">Stav</div><div class="p-value" id="pliStav">—</div></div>
+  <div class="p-row"><div class="p-label">Odpověděl(a)</div><div class="p-value" id="pliOdpovedel">—</div></div>
+  <div class="p-row"><div class="p-label">Telefon</div><div class="p-value" id="pliTelefon">—</div></div>
+  <div class="p-row"><div class="p-label">E-mail</div><div class="p-value" id="pliEmail">—</div></div>
+  <div class="p-meetings-title">Historie komunikace</div>
+  <div id="pliKomunikace"></div>
+  <div class="p-footer" id="pliDate">—</div>
+</div>
+
+<div id="printAreaLinkedinCalling">
+  <div class="p-eyebrow">4fin Better Together — LinkedIn oslovení</div>
+  <div class="p-name">Seznam k obvolání</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Jméno</th>
+        <th>Pozice / firma</th>
+        <th>Stav</th>
+        <th>Obvoláno</th>
+        <th>Telefon</th>
+        <th>E-mail</th>
+        <th>Co jsme psali</th>
+        <th>Poznámka</th>
+      </tr>
+    </thead>
+    <tbody id="pclTableBody"></tbody>
+  </table>
+  <div class="p-footer" id="pclDate">—</div>
+</div>
+
+<div id="printAreaLinkedinList">
+  <div class="p-eyebrow">4fin Better Together — LinkedIn oslovení</div>
+  <div class="p-name">Přehled všech kontaktů</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Jméno</th>
+        <th>Pozice</th>
+        <th>Stav</th>
+        <th>Odpověděl</th>
+        <th>Telefon</th>
+        <th>E-mail</th>
+        <th>Oslovení</th>
+        <th>Follow-up</th>
+      </tr>
+    </thead>
+    <tbody id="pllTableBody"></tbody>
+  </table>
+  <div class="p-footer" id="pllDate">—</div>
+</div>
+
+<div class="toast" id="toast"><span class="toast-dot"></span><span id="toastText">Uloženo</span></div>
+
+<script>
+// ============ CONFIG ============
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyqnJsAlmzOAntypivM5oiLt8twpNJkJrUaK4D-rkvQPzFC_btwUrC8ivasYrnWbdsM6g/exec?token=6696d0e4ae4d7f0d73530fbd67961aeb2d823f69&admin_key=8e95a6c02cd185782552ec71b5bc712bf4cdb792' + (sessionStorage.getItem('master_pin_4fin') ? '&master_pin=' + encodeURIComponent(sessionStorage.getItem('master_pin_4fin')) : '');
+
+const MANAGERS = [
+  { id: 'eisenreich',   name: 'Martin Eisenreich' },
+  { id: 'dubarets',    name: 'Dubarets, Karyna' },
+  { id: 'kruts',        name: 'Kruts Nataliia' },
+  { id: 'truhlar',      name: 'Truhlář Luboš' },
+  { id: 'honcharenko',  name: 'Honcharenko Olha' },
+  { id: 'bugaeva',      name: 'Bugaeva Marina' }
+];
+
+// ============ STATE ============
+let DATA = { candidates: [] }; // loaded from sheet: {id, managerId, jmeno, prijmeni, odkud, pozice, skryto, meetings:[{id,date,time,place,desc,nextDate}], soubory:[{id,nazev,url,datum}]}
+let currentManagerId = null;
+let currentCandidateId = null;
+let editingCandidateId = null; // when editing existing candidate via modal
+let editingMeetingId = null;
+
+const LOCAL_KEY = '4fin_nabor_cache';
+
+// ============ INIT ============
+document.addEventListener('DOMContentLoaded', () => {
+  renderManagerGrid();
+  loadFromCache();
+  syncFromSheet();
+  loadLinkedinFromCache();
+  renderFollowUpToday();
+  renderArchivaceNavrzeno();
+  renderLinkedinStats();
+  renderLinkedinTrend();
+  renderLinkedinCategoryStats();
+  syncLinkedinFromSheet();
+  bindEvents();
+});
+
+function bindEvents() {
+  document.getElementById('backToHome').addEventListener('click', (e) => { e.preventDefault(); showView('view-home'); });
+  document.getElementById('backToManager').addEventListener('click', (e) => { e.preventDefault(); showView('view-manager'); });
+  document.getElementById('addCandidateBtn').addEventListener('click', () => openCandidateModal());
+  document.getElementById('addMeetingBtn').addEventListener('click', () => openMeetingModal());
+  document.getElementById('editCandidateBtn').addEventListener('click', () => openCandidateModal(currentCandidateId));
+  document.getElementById('exportPdfBtn').addEventListener('click', () => exportCandidatePdf());
+  document.getElementById('printManagerListBtn').addEventListener('click', exportManagerListPdf);
+  document.getElementById('hideCandidateBtn').addEventListener('click', hideCandidate);
+  document.getElementById('addAttachBtn').addEventListener('click', () => document.getElementById('fileAttachInput').click());
+  document.getElementById('fileAttachInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) uploadCandidateFile(file);
+    e.target.value = '';
+  });
+  document.getElementById('saveCandidateBtn').addEventListener('click', saveCandidate);
+  document.getElementById('saveMeetingBtn').addEventListener('click', saveMeeting);
+  document.querySelectorAll('[data-close]').forEach(btn => {
+    btn.addEventListener('click', () => closeModal(btn.dataset.close));
+  });
+
+  // LinkedIn oslovení
+  document.getElementById('goToLinkedinBtn').addEventListener('click', openLinkedin);
+  document.getElementById('backToHomeFromLinkedin').addEventListener('click', (e) => { e.preventDefault(); showView('view-home'); });
+  document.getElementById('backToLinkedinList').addEventListener('click', (e) => { e.preventDefault(); showView('view-linkedin'); renderLinkedinList(); });
+  document.getElementById('addLinkedinBtn').addEventListener('click', openLinkedinNewModal);
+  document.getElementById('addOdpovedBtn').addEventListener('click', openPridatOdpovedModal);
+  document.getElementById('exportLinkedinListBtn').addEventListener('click', exportLinkedinListPdf);
+  document.getElementById('downloadSelectedBtn').addEventListener('click', exportSelectedLinkedinContacts);
+  document.getElementById('clearSelectionBtn').addEventListener('click', clearLinkedinSelection);
+  document.getElementById('linkedinSortSelect').addEventListener('change', (e) => {
+    currentLinkedinSort = e.target.value;
+    renderLinkedinList();
+  });
+  document.getElementById('quickSelectCallableBtn').addEventListener('click', quickSelectCallable);
+  document.getElementById('markSelectedCalledBtn').addEventListener('click', markSelectedAsCalled);
+  document.getElementById('addHovorBtn').addEventListener('click', openHovorModal);
+  document.getElementById('saveHovorBtn').addEventListener('click', saveHovor);
+  document.getElementById('linkedinSearchInput').addEventListener('input', (e) => {
+    currentLinkedinSearch = e.target.value.trim().toLowerCase();
+    renderLinkedinList();
+  });
+  document.getElementById('toggleArchivBtn').addEventListener('click', toggleArchivKontaktu);
+  document.getElementById('liObvolano').addEventListener('change', toggleObvolano);
+  document.getElementById('parseOdpovedBtn').addEventListener('click', parseOdpoved);
+  document.getElementById('saveOdpovedBtn').addEventListener('click', saveOdpoved);
+  document.getElementById('parseQuickAddBtn').addEventListener('click', parseQuickAdd);
+  document.getElementById('saveLinkedinNewBtn').addEventListener('click', saveLinkedinNew);
+  document.getElementById('saveLinkedinDetailBtn').addEventListener('click', saveLinkedinDetail);
+  document.getElementById('addZpravaMartinBtn').addEventListener('click', () => openZpravaModal('martin'));
+  document.getElementById('addZpravaOdpovedBtn').addEventListener('click', () => openZpravaModal('kontakt'));
+  document.getElementById('saveZpravaBtn').addEventListener('click', saveZprava);
+  document.getElementById('deleteLinkedinBtn').addEventListener('click', deleteLinkedinContact);
+  document.getElementById('printKomunikaceBtn').addEventListener('click', exportLinkedinPdf);
+  document.getElementById('liOdpovedel').addEventListener('change', toggleOdpovedel);
+  document.getElementById('saveDomluvenoBtn').addEventListener('click', saveDomluveno);
+  document.getElementById('presunoutDoNaboruBtn').addEventListener('click', presunoutDoNaboru);
+  document.querySelectorAll('#linkedinFilterRow button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentLinkedinFilter = btn.dataset.filter;
+      document.querySelectorAll('#linkedinFilterRow button').forEach(b => b.style.borderColor = 'var(--border)');
+      btn.style.borderColor = 'var(--accent)';
+      renderLinkedinList();
+    });
+  });
+}
+
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function openModal(id) { document.getElementById(id).classList.add('active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+// ============ RENDER: home ============
+function renderManagerGrid() {
+  const grid = document.getElementById('managerGrid');
+  grid.innerHTML = MANAGERS.map(m => {
+    const count = DATA.candidates.filter(c => c.managerId === m.id && !c.skryto).length;
+    const initials = m.name.split(' ').map(p => p[0]).slice(0,2).join('').toUpperCase();
+    return `<button class="manager-card" onclick="openManager('${m.id}')">
+      <div class="manager-initials">${initials}</div>
+      <div class="manager-name">${m.name}</div>
+      <div class="manager-count"><strong>${count}</strong> ${count === 1 ? 'kandidát' : (count >= 2 && count <= 4 ? 'kandidáti' : 'kandidátů')}</div>
+    </button>`;
+  }).join('');
+}
+
+function openManager(managerId) {
+  currentManagerId = managerId;
+  const m = MANAGERS.find(x => x.id === managerId);
+  document.getElementById('managerTitle').textContent = m.name;
+  renderCandidateList();
+  showView('view-manager');
+}
+
+function renderCandidateList() {
+  const list = DATA.candidates.filter(c => c.managerId === currentManagerId && !c.skryto);
+  const container = document.getElementById('candidateList');
+  if (list.length === 0) {
+    container.innerHTML = `<div class="empty-state">Zatím žádní kandidáti.<br>Přidej prvního tlačítkem níže.</div>`;
+    return;
+  }
+
+  // Spočítej datum poslední proběhlé schůzky pro každého kandidáta
+  const enriched = list.map(c => {
+    const meetings = (c.meetings || []).slice().sort((a,b) => (a.date||'').localeCompare(b.date||''));
+    const last = meetings[meetings.length - 1];
+    return { c, last, lastDate: last ? last.date : null };
+  });
+
+  // Seřaď: bez schůzky úplně nahoru (nejvíc potřebují pozornost), pak od nejstaršího data
+  enriched.sort((a, b) => {
+    if (!a.lastDate && !b.lastDate) return 0;
+    if (!a.lastDate) return -1;
+    if (!b.lastDate) return 1;
+    return a.lastDate.localeCompare(b.lastDate);
+  });
+
+  const today = new Date().toISOString().slice(0,10);
+
+  container.innerHTML = enriched.map(({c, last}) => {
+    let lastVal, lastCls;
+    if (!last) {
+      lastVal = '—'; lastCls = 'empty';
+    } else {
+      const daysAgo = daysBetween(last.date, today);
+      lastVal = formatDateShort(last.date);
+      lastCls = daysAgo >= 21 ? 'stale-text' : (daysAgo >= 10 ? 'warn-text' : '');
+    }
+
+    const nextDate = last && last.nextDate ? last.nextDate : null;
+    let nextVal, nextCls;
+    if (!nextDate) {
+      nextVal = '—'; nextCls = 'empty';
+    } else {
+      nextVal = formatDateShort(nextDate);
+      nextCls = 'next';
+    }
+
+    const preview = last && last.desc ? escapeHtml(truncate(last.desc, 60)) : 'Bez poznámky ze schůzky';
+    return `<div class="candidate-card">
+      <div class="candidate-info" onclick="openCandidate('${c.id}')" style="cursor:pointer;">
+        <div class="candidate-name">${escapeHtml(c.jmeno)} ${escapeHtml(c.prijmeni)}</div>
+        <div class="candidate-meta">${escapeHtml(c.pozice || '—')}</div>
+        <div class="candidate-meta" style="margin-top:2px;color:var(--text3);">${preview}</div>
+      </div>
+      <div class="candidate-cols">
+        <div>
+          <div class="candidate-col-label">Poslední</div>
+          <div class="candidate-col-value ${lastCls}">${lastVal}</div>
+        </div>
+        <div>
+          <div class="candidate-col-label">Další</div>
+          <div class="candidate-col-value ${nextCls}">${nextVal}</div>
+        </div>
+      </div>
+      <button class="pdf-btn" title="Exportovat do PDF" onclick="event.stopPropagation();exportCandidatePdf('${c.id}')">⬇</button>
+      <div class="candidate-arrow" onclick="openCandidate('${c.id}')" style="cursor:pointer;">›</div>
+    </div>`;
+  }).join('');
+}
+
+function daysBetween(isoDate, todayIso) {
+  const d1 = new Date(isoDate + 'T00:00:00');
+  const d2 = new Date(todayIso + 'T00:00:00');
+  return Math.round((d2 - d1) / 86400000);
+}
+
+function truncate(str, len) {
+  if (!str) return '';
+  return str.length > len ? str.slice(0, len) + '…' : str;
+}
+
+// ============ RENDER: candidate detail ============
+function openCandidate(candidateId) {
+  currentCandidateId = candidateId;
+  const c = DATA.candidates.find(x => x.id === candidateId);
+  if (!c) return;
+  document.getElementById('candDetailName').textContent = `${c.jmeno} ${c.prijmeni}`;
+  document.getElementById('candDetailOrigin').textContent = c.odkud || '—';
+  document.getElementById('candDetailCompany').textContent = c.spolecnost || '—';
+  document.getElementById('candDetailPosition').textContent = c.pozice || '—';
+
+  const meetings = (c.meetings || []).slice().sort((a,b) => (a.date||'').localeCompare(b.date||''));
+  document.getElementById('candDetailMeetingCount').textContent = meetings.length + (meetings.length === 1 ? ' schůzka' : (meetings.length >= 2 && meetings.length <= 4 ? ' schůzky' : ' schůzek'));
+  document.getElementById('meetingHistoryLabel').textContent = `Historie schůzek (${meetings.length})`;
+
+  const problemBox = document.getElementById('candDetailProblemBox');
+  if (c.problem) {
+    problemBox.style.display = 'block';
+    document.getElementById('candDetailProblem').textContent = c.problem;
+  } else {
+    problemBox.style.display = 'none';
+  }
+
+  const lastMeeting = meetings[meetings.length - 1];
+  const nextBox = document.getElementById('nextMeetingBox');
+  if (lastMeeting && lastMeeting.nextDate) {
+    nextBox.style.display = 'block';
+    document.getElementById('nextMeetingDate').textContent = formatDateLong(lastMeeting.nextDate);
+  } else {
+    nextBox.style.display = 'none';
+  }
+
+  const meetingListEl = document.getElementById('meetingList');
+  if (meetings.length === 0) {
+    meetingListEl.innerHTML = `<div class="empty-state">Žádné schůzky zatím nejsou zaznamenané.</div>`;
+  } else {
+    meetingListEl.innerHTML = meetings.slice().reverse().map((m, idx) => `
+      <div class="meeting-card" onclick="viewMeeting('${m.id}')">
+        <div class="meeting-top">
+          <div class="meeting-date">#${meetings.length - idx} · ${formatDateLong(m.date)}${m.time ? ' · ' + m.time : ''}</div>
+          <div class="meeting-place">${escapeHtml(m.place || '')}</div>
+        </div>
+        <div class="meeting-preview">${escapeHtml(m.desc || '')}</div>
+      </div>`).join('');
+  }
+
+  renderAttachments(c);
+
+  showView('view-candidate');
+}
+
+function renderAttachments(c) {
+  const el = document.getElementById('attachList');
+  const soubory = (c.soubory || []).slice().sort((a,b) => (a.datum||'').localeCompare(b.datum||''));
+  if (soubory.length === 0) {
+    el.innerHTML = `<div class="empty-state" style="padding:20px;">Zatím žádné přílohy.</div>`;
+    return;
+  }
+  el.innerHTML = soubory.map(s => `
+    <div class="attach-item">
+      <div class="attach-icon">📎</div>
+      <a class="attach-info" href="${s.url}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit;">
+        <div class="attach-name">${escapeHtml(s.nazev)}</div>
+        <div class="attach-date">${formatDateLong(s.datum)}</div>
+      </a>
+      <button class="attach-remove" title="Odebrat přílohu" onclick="removeCandidateFile('${s.id}')">×</button>
+    </div>`).join('');
+}
+
+function uploadCandidateFile(file) {
+  const c = DATA.candidates.find(x => x.id === currentCandidateId);
+  if (!c) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const base64 = reader.result.split(',')[1];
+    setSyncStatus('syncing');
+    showToast('Nahrávám přílohu…');
+    fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        action: 'uploadNaborSoubor',
+        candidateId: c.id,
+        nazevSouboru: file.name,
+        mimeType: file.type || 'application/octet-stream',
+        data: base64
+      })
+    })
+      .then(r => r.json())
+      .then(res => {
+        if (!res || res.error || !res.url) {
+          console.log('Upload přílohy selhal:', res && res.error);
+          setSyncStatus('error');
+          showToast('Nahrání přílohy selhalo', true);
+          return;
+        }
+        if (!c.soubory) c.soubory = [];
+        c.soubory.push({
+          id: res.id || ('F-' + Date.now()),
+          nazev: file.name,
+          url: res.url,
+          datum: new Date().toISOString().slice(0,10)
+        });
+        saveToCache();
+        renderAttachments(c);
+        setSyncStatus('ok');
+        showToast('Příloha nahrána');
+      })
+      .catch(err => {
+        console.log('Upload přílohy selhal:', err);
+        setSyncStatus('error');
+        showToast('Nahrání přílohy selhalo — zkontroluj připojení', true);
+      });
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeCandidateFile(fileId) {
+  const c = DATA.candidates.find(x => x.id === currentCandidateId);
+  if (!c || !c.soubory) return;
+  if (!confirm('Odebrat tuto přílohu ze záznamu? (Soubor samotný zůstane na Disku.)')) return;
+  c.soubory = c.soubory.filter(s => s.id !== fileId);
+  saveToCache();
+  pushToSheet();
+  renderAttachments(c);
+  showToast('Příloha odebrána');
+}
+
+function hideCandidate() {
+  const c = DATA.candidates.find(x => x.id === currentCandidateId);
+  if (!c) return;
+  if (!confirm(`Skrýt kandidáta ${c.jmeno} ${c.prijmeni}? Záznam zůstane uložený, ale zmizí ze seznamu.`)) return;
+  c.skryto = true;
+  saveToCache();
+  pushToSheet();
+  renderManagerGrid();
+  showView('view-manager');
+  renderCandidateList();
+  showToast('Kandidát skryt');
+}
+
+function viewMeeting(meetingId) {
+  const c = DATA.candidates.find(x => x.id === currentCandidateId);
+  const m = (c.meetings || []).find(x => x.id === meetingId);
+  if (!m) return;
+  document.getElementById('meetingViewBody').innerHTML = `
+    <div class="form-group">
+      <div class="form-label">Datum a čas</div>
+      <div style="font-size:16px;font-weight:600;">${formatDateLong(m.date)}${m.time ? ' · ' + m.time : ''}</div>
+    </div>
+    <div class="form-group">
+      <div class="form-label">Místo</div>
+      <div style="font-size:14px;">${escapeHtml(m.place || '—')}</div>
+    </div>
+    <div class="form-group">
+      <div class="form-label">Průběh schůzky</div>
+      <div style="font-size:14px;line-height:1.6;white-space:pre-wrap;">${escapeHtml(m.desc || '—')}</div>
+    </div>
+    ${m.nextDate ? `<div class="form-group">
+      <div class="form-label">Domluvená další schůzka</div>
+      <div style="font-size:14px;color:var(--accent2);">${formatDateLong(m.nextDate)}</div>
+    </div>` : ''}
+    <button class="btn btn-secondary" style="margin-top:8px;" onclick="closeModal('modalMeetingView');openMeetingModal('${m.id}')">Upravit tuto schůzku</button>
+  `;
+  openModal('modalMeetingView');
+}
+
+// ============ CANDIDATE MODAL ============
+function openCandidateModal(candidateId) {
+  editingCandidateId = candidateId || null;
+  if (candidateId) {
+    const c = DATA.candidates.find(x => x.id === candidateId);
+    document.getElementById('modalCandidateTitle').textContent = 'Upravit kandidáta';
+    document.getElementById('fJmeno').value = c.jmeno || '';
+    document.getElementById('fPrijmeni').value = c.prijmeni || '';
+    document.getElementById('fOdkud').value = c.odkud || '';
+    document.getElementById('fSpolecnost').value = c.spolecnost || '';
+    document.getElementById('fPozice').value = c.pozice || '';
+    document.getElementById('fProblem').value = c.problem || '';
+  } else {
+    document.getElementById('modalCandidateTitle').textContent = 'Nový kandidát';
+    document.getElementById('fJmeno').value = '';
+    document.getElementById('fPrijmeni').value = '';
+    document.getElementById('fOdkud').value = '';
+    document.getElementById('fSpolecnost').value = '';
+    document.getElementById('fPozice').value = '';
+    document.getElementById('fProblem').value = '';
+  }
+  openModal('modalCandidate');
+}
+
+function saveCandidate() {
+  const jmeno = document.getElementById('fJmeno').value.trim();
+  const prijmeni = document.getElementById('fPrijmeni').value.trim();
+  const odkud = document.getElementById('fOdkud').value.trim();
+  const spolecnost = document.getElementById('fSpolecnost').value.trim();
+  const pozice = document.getElementById('fPozice').value.trim();
+  const problem = document.getElementById('fProblem').value.trim();
+
+  if (!jmeno || !prijmeni) {
+    showToast('Vyplň alespoň jméno a příjmení', true);
+    return;
+  }
+
+  if (editingCandidateId) {
+    const c = DATA.candidates.find(x => x.id === editingCandidateId);
+    c.jmeno = jmeno; c.prijmeni = prijmeni; c.odkud = odkud; c.spolecnost = spolecnost; c.pozice = pozice; c.problem = problem;
+  } else {
+    const newCand = {
+      id: 'C-' + Date.now(),
+      managerId: currentManagerId,
+      jmeno, prijmeni, odkud, spolecnost, pozice, problem,
+      meetings: []
+    };
+    DATA.candidates.push(newCand);
+    currentCandidateId = newCand.id;
+  }
+
+  saveToCache();
+  pushToSheet();
+  closeModal('modalCandidate');
+  renderManagerGrid();
+  renderCandidateList();
+  if (editingCandidateId) openCandidate(editingCandidateId);
+  showToast('Kandidát uložen');
+}
+
+// ============ MEETING MODAL ============
+function openMeetingModal(meetingId) {
+  editingMeetingId = meetingId || null;
+  if (meetingId) {
+    const c = DATA.candidates.find(x => x.id === currentCandidateId);
+    const m = (c.meetings || []).find(x => x.id === meetingId);
+    document.getElementById('modalMeetingTitle').textContent = 'Upravit schůzku';
+    document.getElementById('fMeetDate').value = m.date || '';
+    document.getElementById('fMeetTime').value = m.time || '';
+    document.getElementById('fMeetPlace').value = m.place || '';
+    document.getElementById('fMeetDesc').value = m.desc || '';
+    document.getElementById('fNextDate').value = m.nextDate || '';
+  } else {
+    document.getElementById('modalMeetingTitle').textContent = 'Nová schůzka';
+    const today = new Date().toISOString().slice(0,10);
+    document.getElementById('fMeetDate').value = today;
+    document.getElementById('fMeetTime').value = '';
+    document.getElementById('fMeetPlace').value = '';
+    document.getElementById('fMeetDesc').value = '';
+    document.getElementById('fNextDate').value = '';
+  }
+  openModal('modalMeeting');
+}
+
+function saveMeeting() {
+  const date = document.getElementById('fMeetDate').value;
+  const time = document.getElementById('fMeetTime').value;
+  const place = document.getElementById('fMeetPlace').value.trim();
+  const desc = document.getElementById('fMeetDesc').value.trim();
+  const nextDate = document.getElementById('fNextDate').value;
+
+  if (!date) {
+    showToast('Vyplň datum schůzky', true);
+    return;
+  }
+
+  const c = DATA.candidates.find(x => x.id === currentCandidateId);
+  if (!c.meetings) c.meetings = [];
+
+  if (editingMeetingId) {
+    const m = c.meetings.find(x => x.id === editingMeetingId);
+    m.date = date; m.time = time; m.place = place; m.desc = desc; m.nextDate = nextDate;
+  } else {
+    c.meetings.push({
+      id: 'M-' + Date.now(),
+      date, time, place, desc, nextDate
+    });
+  }
+
+  saveToCache();
+  pushToSheet();
+  closeModal('modalMeeting');
+  openCandidate(currentCandidateId);
+  showToast(editingMeetingId ? 'Schůzka upravena' : 'Schůzka uložena');
+  editingMeetingId = null;
+}
+
+// ============ PERSISTENCE ============
+function saveToCache() {
+  try { localStorage.setItem(LOCAL_KEY, JSON.stringify(DATA)); } catch(e) {}
+}
+function loadFromCache() {
+  try {
+    const raw = localStorage.getItem(LOCAL_KEY);
+    if (raw) {
+      DATA = JSON.parse(raw);
+      renderManagerGrid();
+      if (currentManagerId) renderCandidateList();
+    }
+  } catch(e) {}
+}
+
+function setSyncStatus(state) {
+  const el = document.getElementById('syncStatus');
+  if (state === 'syncing') el.innerHTML = '<span class="loading-spinner"></span>&nbsp;sync…';
+  else if (state === 'ok') el.innerHTML = '●&nbsp;synchronizováno';
+  else if (state === 'error') el.innerHTML = '●&nbsp;offline (lokální kopie)';
+  else el.innerHTML = '●&nbsp;připraveno';
+}
+
+function syncFromSheet() {
+  setSyncStatus('syncing');
+  fetch(APPS_SCRIPT_URL+'&action=getNabory')
+    .then(r => r.json())
+    .then(json => {
+      // Pokud server vrátil chybu (např. poškozený/příliš velký JSON v Sheets),
+      // NIKDY tím nepřepisuj lokální data — jinak by zmizeli všichni kandidáti.
+      if (json && json.error) {
+        console.log('Sync chyba ze serveru, ponechávám lokální kopii:', json.error);
+        setSyncStatus('error');
+        showToast('Chyba synchronizace ze serveru — zobrazena lokální kopie', true);
+        return;
+      }
+      if (json && Array.isArray(json.candidates)) {
+        DATA = json;
+        saveToCache();
+        renderManagerGrid();
+        if (currentManagerId) renderCandidateList();
+      }
+      setSyncStatus('ok');
+    })
+    .catch(err => {
+      console.log('Sync chyba (pracuji s lokální kopií):', err);
+      setSyncStatus('error');
+    });
+}
+
+function pushToSheet() {
+  setSyncStatus('syncing');
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action: 'saveNabory', data: DATA })
+  })
+    .then(r => r.json())
+    .then(res => {
+      if (res && res.error) {
+        console.log('Uložení do Sheet selhalo (chyba serveru):', res.error);
+        setSyncStatus('error');
+        showToast('Chyba ukládání na server — data jsou zatím jen lokálně', true);
+        return;
+      }
+      setSyncStatus('ok');
+    })
+    .catch(err => {
+      console.log('Uložení do Sheet selhalo, data jsou v lokální kopii:', err);
+      setSyncStatus('error');
+    });
+}
+
+function exportCandidatePdf(candidateId) {
+  const id = candidateId || currentCandidateId;
+  const c = DATA.candidates.find(x => x.id === id);
+  if (!c) return;
+  const m = MANAGERS.find(x => x.id === c.managerId);
+
+  document.getElementById('pName').textContent = `${c.jmeno} ${c.prijmeni}`;
+  document.getElementById('pOdkud').textContent = c.odkud || '—';
+  document.getElementById('pSpolecnost').textContent = c.spolecnost || '—';
+  document.getElementById('pPozice').textContent = c.pozice || '—';
+  document.getElementById('pProblem').textContent = c.problem || '—';
+  document.getElementById('pManager').textContent = m ? m.name : '—';
+  document.getElementById('pDate').textContent = 'Vygenerováno ' + new Date().toLocaleDateString('cs-CZ', { day:'numeric', month:'long', year:'numeric' });
+
+  const meetings = (c.meetings || []).slice().sort((a,b) => (a.date||'').localeCompare(b.date||''));
+  const meetingsEl = document.getElementById('pMeetings');
+  if (meetings.length === 0) {
+    meetingsEl.innerHTML = `<div class="p-meeting-empty">Zatím nejsou zaznamenané žádné schůzky.</div>`;
+  } else {
+    meetingsEl.innerHTML = meetings.map((mt, idx) => `
+      <div class="p-meeting">
+        <div class="p-meeting-head">Schůzka #${idx + 1} — ${formatDateLong(mt.date)}${mt.time ? ' · ' + mt.time : ''}${mt.place ? ' — ' + escapeHtml(mt.place) : ''}</div>
+        <div class="p-meeting-desc">${escapeHtml(mt.desc || '—')}</div>
+        ${mt.nextDate ? `<div class="p-meeting-next">Domluvená další schůzka: ${formatDateLong(mt.nextDate)}</div>` : ''}
+      </div>`).join('');
+  }
+
+  document.getElementById('printArea').classList.add('print-active');
+  document.getElementById('printAreaList').classList.remove('print-active');
+  document.getElementById('printAreaLinkedin').classList.remove('print-active');
+  document.getElementById('printAreaLinkedinList').classList.remove('print-active');
+  document.getElementById('printAreaLinkedinCalling').classList.remove('print-active');
+  window.print();
+}
+
+function exportManagerListPdf() {
+  const m = MANAGERS.find(x => x.id === currentManagerId);
+  const list = DATA.candidates.filter(c => c.managerId === currentManagerId && !c.skryto);
+
+  document.getElementById('plManagerName').textContent = (m ? m.name : '—') + ' — přehled kandidátů';
+  document.getElementById('plDate').textContent = 'Vygenerováno ' + new Date().toLocaleDateString('cs-CZ', { day:'numeric', month:'long', year:'numeric' });
+
+  const today = new Date().toISOString().slice(0,10);
+  const enriched = list.map(c => {
+    const meetings = (c.meetings || []).slice().sort((a,b) => (a.date||'').localeCompare(b.date||''));
+    const last = meetings[meetings.length - 1];
+    return { c, last, lastDate: last ? last.date : null, count: meetings.length };
+  });
+  enriched.sort((a, b) => {
+    if (!a.lastDate && !b.lastDate) return 0;
+    if (!a.lastDate) return -1;
+    if (!b.lastDate) return 1;
+    return a.lastDate.localeCompare(b.lastDate);
+  });
+
+  const tbody = document.getElementById('plTableBody');
+  if (enriched.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6">Žádní kandidáti.</td></tr>`;
+  } else {
+    tbody.innerHTML = enriched.map(({c, last, count}) => `
+      <tr>
+        <td><strong>${escapeHtml(c.jmeno)} ${escapeHtml(c.prijmeni)}</strong></td>
+        <td>${escapeHtml(c.pozice || '—')}</td>
+        <td>${escapeHtml(c.spolecnost || '—')}</td>
+        <td>${last ? formatDateShort(last.date) : '—'}</td>
+        <td>${last && last.nextDate ? formatDateShort(last.nextDate) : '—'}</td>
+        <td>${count}</td>
+      </tr>`).join('');
+  }
+
+  document.getElementById('printAreaList').classList.add('print-active');
+  document.getElementById('printArea').classList.remove('print-active');
+  document.getElementById('printAreaLinkedin').classList.remove('print-active');
+  document.getElementById('printAreaLinkedinList').classList.remove('print-active');
+  document.getElementById('printAreaLinkedinCalling').classList.remove('print-active');
+  window.print();
+}
+
+// ============ LINKEDIN OSLOVENI ============
+let LINKEDIN_DATA = { kontakty: [] };
+let currentLinkedinId = null;
+const LINKEDIN_LOCAL_KEY = '4fin_linkedin_cache';
+
+const LINKEDIN_STAV_LABELS = {
+  '': 'Čeká na reakci',
+  bez_odpovedi: 'Bez odpovědi',
+  zajem: 'Zájem — dal telefon',
+  nezajem: 'Nezájem zatím',
+  domluveno: 'Domluven hovor'
+};
+
+let currentLinkedinFilter = '';
+let currentLinkedinSort = 'nejnovejsi';
+let currentLinkedinSearch = '';
+let selectedLinkedinIds = new Set();
+
+function quickSelectCallable() {
+  const all = LINKEDIN_DATA.kontakty || [];
+  const matching = all.filter(k => k.telefon && k.telefon.trim() && !k.obvolano);
+  if (matching.length === 0) { showToast('Žádný kontakt s telefonem a bez obvolání', true); return; }
+  selectedLinkedinIds = new Set(matching.map(k => k.id));
+  updateDownloadSelectedBtn();
+  renderLinkedinList();
+  showToast('Vybráno ' + matching.length + ' kontaktů');
+}
+
+function markSelectedAsCalled() {
+  if (selectedLinkedinIds.size === 0) { showToast('Nejdřív označ aspoň jeden kontakt', true); return; }
+  const today = new Date().toISOString().slice(0,10);
+  let pocet = 0;
+  (LINKEDIN_DATA.kontakty || []).forEach(k => {
+    if (selectedLinkedinIds.has(k.id)) {
+      k.obvolano = true;
+      k.obvolanoDatum = today;
+      pocet++;
+    }
+  });
+  saveLinkedinToCache();
+  pushLinkedinToSheet();
+  renderLinkedinList();
+  showToast(pocet + ' kontaktů označeno jako obvolané');
+}
+
+function toggleObvolano() {
+  const k = LINKEDIN_DATA.kontakty.find(x => x.id === currentLinkedinId);
+  if (!k) return;
+  k.obvolano = document.getElementById('liObvolano').checked;
+  k.obvolanoDatum = k.obvolano ? new Date().toISOString().slice(0,10) : '';
+  document.getElementById('liObvolanoDatumLabel').textContent = k.obvolano ? ('(' + formatDateShort(k.obvolanoDatum) + ')') : '';
+  saveLinkedinToCache();
+  pushLinkedinToSheet();
+  renderLinkedinStats();
+  showToast(k.obvolano ? 'Označeno jako obvoláno' : 'Označení obvolání zrušeno');
+}
+
+function renderHovoryList(k) {
+  const el = document.getElementById('liHovoryList');
+  const hovory = (k.hovory || []).slice().sort((a,b) => (a.datum||'').localeCompare(b.datum||''));
+  if (hovory.length === 0) {
+    el.innerHTML = `<div class="empty-state">Zatím žádné poznámky z hovorů.</div>`;
+    return;
+  }
+  el.innerHTML = hovory.slice().reverse().map((h, idx) => `
+    <div class="meeting-card" style="cursor:default;">
+      <div class="meeting-top">
+        <div class="meeting-date">#${hovory.length - idx} · ${formatDateLong(h.datum)}</div>
+      </div>
+      <div class="meeting-preview" style="-webkit-line-clamp:4;white-space:pre-wrap;">${escapeHtml(h.text || '')}</div>
+    </div>`).join('');
+}
+
+function openHovorModal() {
+  document.getElementById('fHovorDatum').value = new Date().toISOString().slice(0,10);
+  document.getElementById('fHovorText').value = '';
+  openModal('modalHovor');
+}
+
+function saveHovor() {
+  const datum = document.getElementById('fHovorDatum').value;
+  const text = document.getElementById('fHovorText').value.trim();
+  if (!datum || !text) { showToast('Vyplň datum i text poznámky', true); return; }
+  const k = LINKEDIN_DATA.kontakty.find(x => x.id === currentLinkedinId);
+  if (!k) return;
+  if (!k.hovory) k.hovory = [];
+  k.hovory.push({ id: 'H-' + Date.now(), datum, text });
+  saveLinkedinToCache();
+  pushLinkedinToSheet();
+  closeModal('modalHovor');
+  renderHovoryList(k);
+  showToast('Poznámka z hovoru uložena');
+}
+
+function renderCallLink(k) {
+  const wrap = document.getElementById('liCallLinkWrap');
+  if (!wrap) return;
+  if (k.telefon && k.telefon.trim()) {
+    const cislo = k.telefon.trim();
+    wrap.innerHTML = `<a href="tel:${escapeHtml(cislo.replace(/\s+/g,''))}" style="color:var(--accent);font-size:13px;text-decoration:none;">📞 Zavolat na ${escapeHtml(cislo)}</a>`;
+  } else {
+    wrap.innerHTML = '';
+  }
+}
+
+function renderStavHistorie(k) {
+  const el = document.getElementById('liStavHistorieList');
+  const historie = (k.stavHistorie || []).slice().sort((a,b) => (a.datum||'').localeCompare(b.datum||''));
+  if (historie.length === 0) {
+    el.innerHTML = `<div class="empty-state">Zatím žádná změna stavu.</div>`;
+    return;
+  }
+  el.innerHTML = historie.slice().reverse().map(h => `
+    <div class="meeting-card" style="cursor:default;padding:10px 14px;">
+      <div style="display:flex;justify-content:space-between;font-size:13px;">
+        <span>${escapeHtml(LINKEDIN_STAV_LABELS[h.stav || ''] || h.stav)}</span>
+        <span style="color:var(--text3);font-family:var(--mono);font-size:11px;">${formatDateShort(h.datum)}</span>
+      </div>
+    </div>`).join('');
+}
+
+function toggleArchivKontaktu() {
+  const k = LINKEDIN_DATA.kontakty.find(x => x.id === currentLinkedinId);
+  if (!k) return;
+  k.archived = !k.archived;
+  saveLinkedinToCache();
+  pushLinkedinToSheet();
+  document.getElementById('toggleArchivBtn').textContent = k.archived ? '↩ Vrátit z archivu' : '🗄 Archivovat kontakt';
+  showToast(k.archived ? 'Kontakt archivován' : 'Kontakt vrácen z archivu');
+}
+
+function toggleLinkedinSelect(id, checked) {
+  if (checked) selectedLinkedinIds.add(id);
+  else selectedLinkedinIds.delete(id);
+  updateDownloadSelectedBtn();
+}
+
+function updateDownloadSelectedBtn() {
+  const btn = document.getElementById('downloadSelectedBtn');
+  const n = selectedLinkedinIds.size;
+  btn.textContent = '⬇ Stáhnout vybrané (' + n + ')';
+  btn.disabled = n === 0;
+}
+
+function clearLinkedinSelection() {
+  selectedLinkedinIds.clear();
+  updateDownloadSelectedBtn();
+  renderLinkedinList();
+  showToast('Výběr zrušen');
+}
+
+function exportSelectedLinkedinContacts() {
+  const vybrani = (LINKEDIN_DATA.kontakty || []).filter(k => selectedLinkedinIds.has(k.id));
+  if (vybrani.length === 0) { showToast('Nejdřív označ aspoň jeden kontakt', true); return; }
+
+  document.getElementById('pclDate').textContent = 'Vygenerováno ' + new Date().toLocaleDateString('cs-CZ', { day:'numeric', month:'long', year:'numeric' });
+  const tbody = document.getElementById('pclTableBody');
+  tbody.innerHTML = vybrani.map(k => {
+    const prvniZprava = (k.zpravy || [])
+      .filter(z => z.autor !== 'kontakt')
+      .slice()
+      .sort((a,b) => (a.datum||'').localeCompare(b.datum||''))[0];
+    const coJsmePsali = prvniZprava ? truncate(prvniZprava.text || '', 90) : '—';
+    return `
+    <tr>
+      <td><strong>${escapeHtml(k.jmeno)}</strong></td>
+      <td>${escapeHtml(k.pozice || '—')}</td>
+      <td>${escapeHtml(LINKEDIN_STAV_LABELS[k.stav || ''] || k.stav)}</td>
+      <td>${k.obvolano ? 'Ano' + (k.obvolanoDatum ? ' (' + formatDateShort(k.obvolanoDatum) + ')' : '') : 'Ne'}</td>
+      <td>${escapeHtml(k.telefon || '—')}</td>
+      <td>${escapeHtml(k.email || '—')}</td>
+      <td>${escapeHtml(coJsmePsali)}</td>
+      <td>${escapeHtml(k.poznamka || '—')}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('printAreaLinkedinCalling').classList.add('print-active');
+  document.getElementById('printArea').classList.remove('print-active');
+  document.getElementById('printAreaList').classList.remove('print-active');
+  document.getElementById('printAreaLinkedin').classList.remove('print-active');
+  document.getElementById('printAreaLinkedinList').classList.remove('print-active');
+  window.print();
+}
+
+function saveLinkedinToCache() {
+  try { localStorage.setItem(LINKEDIN_LOCAL_KEY, JSON.stringify(LINKEDIN_DATA)); } catch(e) {}
+}
+function loadLinkedinFromCache() {
+  try {
+    const raw = localStorage.getItem(LINKEDIN_LOCAL_KEY);
+    if (raw) LINKEDIN_DATA = JSON.parse(raw);
+  } catch(e) {}
+}
+
+function syncLinkedinFromSheet() {
+  fetch(APPS_SCRIPT_URL + '&action=getLinkedinOsloveni')
+    .then(r => r.json())
+    .then(json => {
+      if (json && json.error) { console.log('LinkedIn sync chyba ze serveru, ponechávám lokální kopii:', json.error); return; }
+      if (json && Array.isArray(json.kontakty)) {
+        LINKEDIN_DATA = json;
+        saveLinkedinToCache();
+        renderFollowUpToday();
+        renderArchivaceNavrzeno();
+        renderLinkedinStats();
+        renderLinkedinTrend();
+        renderLinkedinCategoryStats();
+        if (document.getElementById('view-linkedin').classList.contains('active')) renderLinkedinList();
+      }
+    })
+    .catch(err => console.log('LinkedIn sync chyba (pracuji s lokální kopií):', err));
+}
+
+function pushLinkedinToSheet() {
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action: 'saveLinkedinOsloveni', data: LINKEDIN_DATA })
+  })
+    .then(r => r.json())
+    .then(res => {
+      if (res && res.error) {
+        console.log('Uložení LinkedIn dat selhalo (chyba serveru):', res.error);
+        showToast('Chyba ukládání na server — data jsou zatím jen lokálně', true);
+      }
+    })
+    .catch(err => {
+      console.log('Push LinkedIn dat selhal, data jsou v lokální kopii:', err);
+      showToast('Chyba ukládání — zkontroluj připojení', true);
+    });
+}
+
+function isoWeekStart(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const day = (d.getDay() + 6) % 7; // 0 = pondělí
+  d.setDate(d.getDate() - day);
+  return d.toISOString().slice(0,10);
+}
+
+function renderLinkedinTrend() {
+  const container = document.getElementById('linkedinTrendChart');
+  if (!container) return;
+  const all = LINKEDIN_DATA.kontakty || [];
+
+  // Připrav posledních 8 týdnů (počínaje pondělím aktuálního týdne, nejstarší první)
+  const weeks = [];
+  const today = new Date();
+  const thisWeekStart = new Date(isoWeekStart(today.toISOString().slice(0,10)) + 'T00:00:00');
+  for (let i = 7; i >= 0; i--) {
+    const d = new Date(thisWeekStart);
+    d.setDate(d.getDate() - i * 7);
+    weeks.push(d.toISOString().slice(0,10));
+  }
+
+  const osloveniPoTydnu = {};
+  const odpovediPoTydnu = {};
+  weeks.forEach(w => { osloveniPoTydnu[w] = 0; odpovediPoTydnu[w] = 0; });
+
+  all.forEach(k => {
+    if (k.datumOsloveni) {
+      const w = isoWeekStart(k.datumOsloveni);
+      if (osloveniPoTydnu.hasOwnProperty(w)) osloveniPoTydnu[w]++;
+    }
+    const zpravyOdKontaktu = (k.zpravy || []).filter(z => z.autor === 'kontakt');
+    if (zpravyOdKontaktu.length > 0) {
+      const nejstarsi = zpravyOdKontaktu.slice().sort((a,b) => (a.datum||'').localeCompare(b.datum||''))[0];
+      if (nejstarsi && nejstarsi.datum) {
+        const w = isoWeekStart(nejstarsi.datum);
+        if (odpovediPoTydnu.hasOwnProperty(w)) odpovediPoTydnu[w]++;
+      }
+    }
+  });
+
+  const maxVal = Math.max(1, ...weeks.map(w => Math.max(osloveniPoTydnu[w], odpovediPoTydnu[w])));
+
+  function bar(val, color) {
+    const heightPx = Math.round((val / maxVal) * 60) + (val > 0 ? 4 : 0);
+    return `<div style="width:10px;height:${heightPx}px;background:${color};border-radius:2px 2px 0 0;" title="${val}"></div>`;
+  }
+
+  container.innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;">
+      <div style="display:flex;align-items:flex-end;gap:10px;height:64px;margin-bottom:8px;">
+        ${weeks.map(w => `
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;">
+            <div style="display:flex;align-items:flex-end;gap:2px;height:64px;">
+              ${bar(osloveniPoTydnu[w], 'var(--accent)')}
+              ${bar(odpovediPoTydnu[w], 'var(--blue)')}
+            </div>
+          </div>`).join('')}
+      </div>
+      <div style="display:flex;gap:10px;">
+        ${weeks.map(w => `<div style="flex:1;text-align:center;font-size:9px;color:var(--text3);">${formatDateShort(w)}</div>`).join('')}
+      </div>
+      <div style="margin-top:10px;display:flex;gap:16px;font-size:11px;color:var(--text2);">
+        <span><span style="display:inline-block;width:8px;height:8px;background:var(--accent);border-radius:2px;margin-right:4px;"></span>Oslovení</span>
+        <span><span style="display:inline-block;width:8px;height:8px;background:var(--blue);border-radius:2px;margin-right:4px;"></span>Odpovědi</span>
+      </div>
+    </div>`;
+}
+
+const LINKEDIN_KATEGORIE_LABELS = {
+  '': 'Nezařazeno',
+  konkurence: 'Konkurence',
+  banka: 'Banka',
+  pojistovna: 'Pojišťovna',
+  reality: 'Reality',
+  jine: 'Jiné'
+};
+
+function renderLinkedinCategoryStats() {
+  const container = document.getElementById('linkedinCategoryStats');
+  if (!container) return;
+  const all = LINKEDIN_DATA.kontakty || [];
+  if (all.length === 0) {
+    container.innerHTML = `<div class="empty-state" style="padding:16px;">Zatím žádná data.</div>`;
+    return;
+  }
+  const byKat = {};
+  all.forEach(k => {
+    const kat = k.kategorie || '';
+    if (!byKat[kat]) byKat[kat] = { celkem: 0, odpovedelo: 0 };
+    byKat[kat].celkem++;
+    if (k.odpovedel) byKat[kat].odpovedelo++;
+  });
+  const rows = Object.keys(byKat)
+    .sort((a,b) => byKat[b].celkem - byKat[a].celkem)
+    .map(kat => {
+      const d = byKat[kat];
+      const pct = d.celkem === 0 ? 0 : Math.round((d.odpovedelo / d.celkem) * 100);
+      return `<div class="candidate-card" style="cursor:default;">
+        <div class="candidate-info">
+          <div class="candidate-name">${LINKEDIN_KATEGORIE_LABELS[kat] || kat}</div>
+          <div class="candidate-meta">${d.celkem} oslovených · ${d.odpovedelo} odpovědělo (${pct} %)</div>
+        </div>
+      </div>`;
+    });
+  container.innerHTML = rows.join('');
+}
+
+function exportLinkedinListPdf() {
+  const all = LINKEDIN_DATA.kontakty || [];
+  document.getElementById('pllDate').textContent = 'Vygenerováno ' + new Date().toLocaleDateString('cs-CZ', { day:'numeric', month:'long', year:'numeric' });
+
+  const sorted = all.slice().sort((a,b) => (b.datumOsloveni||'').localeCompare(a.datumOsloveni||''));
+  const tbody = document.getElementById('pllTableBody');
+  if (sorted.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7">Žádné kontakty.</td></tr>`;
+  } else {
+    tbody.innerHTML = sorted.map(k => `
+      <tr>
+        <td><strong>${escapeHtml(k.jmeno)}</strong></td>
+        <td>${escapeHtml(k.pozice || '—')}</td>
+        <td>${escapeHtml(LINKEDIN_STAV_LABELS[k.stav || ''] || k.stav)}</td>
+        <td>${k.odpovedel ? 'Ano' : 'Ne'}</td>
+        <td>${escapeHtml(k.telefon || '—')}</td>
+        <td>${escapeHtml(k.email || '—')}</td>
+        <td>${k.datumOsloveni ? formatDateShort(k.datumOsloveni) : '—'}</td>
+        <td>${k.followUpDate ? formatDateShort(k.followUpDate) : '—'}</td>
+      </tr>`).join('');
+  }
+
+  document.getElementById('printAreaLinkedinList').classList.add('print-active');
+  document.getElementById('printArea').classList.remove('print-active');
+  document.getElementById('printAreaList').classList.remove('print-active');
+  document.getElementById('printAreaLinkedin').classList.remove('print-active');
+  document.getElementById('printAreaLinkedinCalling').classList.remove('print-active');
+  window.print();
+}
+
+function renderLinkedinStats() {
+  const grid = document.getElementById('linkedinStatsGrid');
+  if (!grid) return;
+  const all = LINKEDIN_DATA.kontakty || [];
+  const total = all.length;
+  const pct = (n) => total === 0 ? '0 %' : Math.round((n / total) * 100) + ' %';
+
+  const odpovedelo = all.filter(k => k.odpovedel).length;
+  const odmitlo = all.filter(k => k.stav === 'nezajem').length;
+  const telefon = all.filter(k => k.telefon && k.telefon.trim()).length;
+  const schuzka = all.filter(k => k.stav === 'domluveno').length;
+
+  const cards = [
+    { value: total, label: 'Celkem oslovených', pct: null },
+    { value: odpovedelo, label: 'Odpovědělo', pct: pct(odpovedelo) },
+    { value: odmitlo, label: 'Odmítlo', pct: pct(odmitlo) },
+    { value: telefon, label: 'Dalo telefon', pct: pct(telefon) },
+    { value: schuzka, label: 'Domluvená schůzka/hovor', pct: pct(schuzka) }
+  ];
+
+  grid.innerHTML = cards.map(c => `
+    <div class="stat-card">
+      <div><span class="stat-value">${c.value}</span>${c.pct ? '<span class="stat-pct">' + c.pct + '</span>' : ''}</div>
+      <div class="stat-label">${c.label}</div>
+    </div>`).join('');
+}
+
+function openLinkedin() {
+  renderLinkedinList();
+  renderLinkedinStats();
+  renderLinkedinTrend();
+  renderLinkedinCategoryStats();
+  showView('view-linkedin');
+}
+
+function renderArchivaceNavrzeno() {
+  const section = document.getElementById('archivaceNavrzenoSection');
+  const container = document.getElementById('archivaceNavrzenoList');
+  if (!section || !container) return;
+  const hranice = new Date();
+  hranice.setDate(hranice.getDate() - 90);
+  const hraniceStr = hranice.toISOString().slice(0,10);
+  const list = (LINKEDIN_DATA.kontakty || []).filter(k =>
+    !k.archived && k.datumOsloveni && k.datumOsloveni <= hraniceStr &&
+    k.stav !== 'domluveno' && !k.odpovedel
+  );
+  if (list.length === 0) {
+    section.style.display = 'none';
+    container.innerHTML = '';
+    return;
+  }
+  section.style.display = 'block';
+  container.innerHTML = list.map(k => `
+    <div class="candidate-card" onclick="openLinkedin();openLinkedinDetail('${k.id}')">
+      <div class="candidate-info">
+        <div class="candidate-name">${escapeHtml(k.jmeno)}</div>
+        <div class="candidate-meta">${escapeHtml(k.pozice || '—')} · osloveno ${formatDateShort(k.datumOsloveni)}</div>
+      </div>
+      <div class="candidate-arrow">›</div>
+    </div>`).join('');
+}
+
+function renderFollowUpToday() {
+  const section = document.getElementById('followUpTodaySection');
+  const container = document.getElementById('followUpTodayList');
+  if (!section || !container) return;
+  const today = new Date().toISOString().slice(0,10);
+  const list = (LINKEDIN_DATA.kontakty || []).filter(k =>
+    k.followUpDate && k.followUpDate <= today && k.stav !== 'domluveno' && k.stav !== 'nezajem'
+  );
+  if (list.length === 0) {
+    section.style.display = 'none';
+    container.innerHTML = '';
+    return;
+  }
+  section.style.display = 'block';
+  container.innerHTML = list.map(k => `
+    <div class="candidate-card" onclick="openLinkedin();openLinkedinDetail('${k.id}')">
+      <div class="candidate-info">
+        <div class="candidate-name">${escapeHtml(k.jmeno)}</div>
+        <div class="candidate-meta">${escapeHtml(k.pozice || '—')} · follow-up: ${formatDateShort(k.followUpDate)}</div>
+      </div>
+      <div class="candidate-arrow">›</div>
+    </div>`).join('');
+}
+
+function renderLinkedinList() {
+  const container = document.getElementById('linkedinList');
+  const all = LINKEDIN_DATA.kontakty || [];
+  let list;
+  if (currentLinkedinFilter === 'archived') {
+    list = all.filter(k => k.archived);
+  } else {
+    list = all.filter(k => !k.archived && (!currentLinkedinFilter || (k.stav || '') === currentLinkedinFilter));
+  }
+  if (currentLinkedinSearch) {
+    list = list.filter(k => k.jmeno && k.jmeno.toLowerCase().includes(currentLinkedinSearch));
+  }
+  if (list.length === 0) {
+    container.innerHTML = `<div class="empty-state">${all.length === 0 ? 'Zatím žádné kontakty.<br>Přidej první tlačítkem níže.' : 'Žádné kontakty neodpovídají hledání/filtru.'}</div>`;
+    return;
+  }
+  const sorted = list.slice().sort((a,b) => {
+    if (currentLinkedinSort === 'nejstarsi') return (a.datumOsloveni||'').localeCompare(b.datumOsloveni||'');
+    if (currentLinkedinSort === 'kategorie') return (LINKEDIN_KATEGORIE_LABELS[a.kategorie||''] || '').localeCompare(LINKEDIN_KATEGORIE_LABELS[b.kategorie||''] || '');
+    if (currentLinkedinSort === 'stav') return (LINKEDIN_STAV_LABELS[a.stav||''] || '').localeCompare(LINKEDIN_STAV_LABELS[b.stav||''] || '');
+    return (b.datumOsloveni||'').localeCompare(a.datumOsloveni||''); // nejnovejsi
+  });
+  container.innerHTML = sorted.map(k => {
+    const stavLabel = LINKEDIN_STAV_LABELS[k.stav || ''] || k.stav;
+    const odpLabel = k.odpovedel ? 'Odpověděl(a)' : 'Neodpověděl(a)';
+    const odpColor = k.odpovedel ? 'var(--green)' : 'var(--text3)';
+    const obvLabel = k.obvolano ? ' · 📞 Obvoláno' : '';
+    const checked = selectedLinkedinIds.has(k.id) ? 'checked' : '';
+    return `<div class="candidate-card">
+      <input type="checkbox" class="li-select-checkbox" ${checked} style="width:20px;height:20px;margin-right:10px;flex-shrink:0;" onclick="event.stopPropagation();toggleLinkedinSelect('${k.id}', this.checked)">
+      <div class="candidate-info" onclick="openLinkedinDetail('${k.id}')" style="cursor:pointer;">
+        <div class="candidate-name">${escapeHtml(k.jmeno)}</div>
+        <div class="candidate-meta">${escapeHtml(k.pozice || '—')}</div>
+        <div class="candidate-meta" style="margin-top:2px;color:var(--text3);">${escapeHtml(stavLabel)} · <span style="color:${odpColor};">${odpLabel}</span>${obvLabel}</div>
+      </div>
+      <div class="candidate-arrow" onclick="openLinkedinDetail('${k.id}')" style="cursor:pointer;">›</div>
+    </div>`;
+  }).join('');
+}
+
+function openLinkedinDetail(id) {
+  currentLinkedinId = id;
+  const k = LINKEDIN_DATA.kontakty.find(x => x.id === id);
+  if (!k) return;
+  document.getElementById('liDetailName').textContent = k.jmeno;
+  document.getElementById('liDetailPozice').textContent = k.pozice || '—';
+  document.getElementById('liDetailStav').textContent = LINKEDIN_STAV_LABELS[k.stav || ''] || k.stav;
+  document.getElementById('liTelefon').value = k.telefon || '';
+  renderCallLink(k);
+  document.getElementById('liEmail').value = k.email || '';
+  document.getElementById('liKategorie').value = k.kategorie || '';
+  document.getElementById('liPoznamka').value = k.poznamka || '';
+  document.getElementById('liFollowUp').value = k.followUpDate || '';
+  document.getElementById('liOdpovedel').checked = !!k.odpovedel;
+  document.getElementById('liObvolano').checked = !!k.obvolano;
+  document.getElementById('liObvolanoDatumLabel').textContent = k.obvolano && k.obvolanoDatum ? ('(' + formatDateShort(k.obvolanoDatum) + ')') : '';
+  document.getElementById('presunoutDoNaboruBtn').textContent = k.presunutoDoNaboru ? '✓ Přesunuto do Náboru' : '→ Přesunout do Náboru';
+  document.getElementById('toggleArchivBtn').textContent = k.archived ? '↩ Vrátit z archivu' : '🗄 Archivovat kontakt';
+  renderStavHistorie(k);
+  renderZpravyList(k);
+  renderHovoryList(k);
+  showView('view-linkedin-detail');
+}
+
+function toggleOdpovedel() {
+  const k = LINKEDIN_DATA.kontakty.find(x => x.id === currentLinkedinId);
+  if (!k) return;
+  k.odpovedel = document.getElementById('liOdpovedel').checked;
+  saveLinkedinToCache();
+  pushLinkedinToSheet();
+  renderLinkedinStats();
+  showToast(k.odpovedel ? 'Označeno jako odpověděl(a)' : 'Označeno jako neodpověděl(a)');
+}
+
+function renderZpravyList(k) {
+  const el = document.getElementById('liZpravyList');
+  const zpravy = (k.zpravy || []).slice().sort((a,b) => (a.datum||'').localeCompare(b.datum||''));
+  if (zpravy.length === 0) {
+    el.innerHTML = `<div class="empty-state">Zatím žádná komunikace.</div>`;
+    return;
+  }
+  el.innerHTML = zpravy.slice().reverse().map((z, idx) => {
+    const autor = z.autor === 'kontakt' ? 'kontakt' : 'martin';
+    const autorLabel = autor === 'kontakt' ? (k.jmeno || 'Kontakt') : 'Já (Martin)';
+    return `
+    <div class="meeting-card komm-card autor-${autor}" style="cursor:default;">
+      <div class="komm-author autor-${autor}">${escapeHtml(autorLabel)}</div>
+      <div class="meeting-top">
+        <div class="meeting-date">#${zpravy.length - idx} · ${formatDateLong(z.datum)}</div>
+      </div>
+      <div class="meeting-preview" style="-webkit-line-clamp:6;white-space:pre-wrap;">${escapeHtml(z.text || '')}</div>
+    </div>`;
+  }).join('');
+}
+
+function setLinkedinStav(stav) {
+  const k = LINKEDIN_DATA.kontakty.find(x => x.id === currentLinkedinId);
+  if (!k) return;
+  if (stav === 'domluveno') { openDomluvenoModal(); return; }
+  k.stav = stav;
+  if (!k.stavHistorie) k.stavHistorie = [];
+  k.stavHistorie.push({ stav, datum: new Date().toISOString().slice(0,10) });
+  let extraMsg = '';
+  if (stav === 'bez_odpovedi') {
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    k.followUpDate = d.toISOString().slice(0,10);
+    document.getElementById('liFollowUp').value = k.followUpDate;
+    extraMsg = ' — další kontakt navržen za týden';
+  }
+  document.getElementById('liDetailStav').textContent = LINKEDIN_STAV_LABELS[stav] || stav;
+  saveLinkedinToCache();
+  pushLinkedinToSheet();
+  renderFollowUpToday();
+  renderLinkedinStats();
+  showToast('Stav uložen' + extraMsg);
+}
+
+function openDomluvenoModal() {
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('fDomluvenoDatum').value = today;
+  document.getElementById('fDomluvenoCas').value = '10:00';
+  openModal('modalDomluveno');
+}
+
+function saveDomluveno() {
+  const datum = document.getElementById('fDomluvenoDatum').value;
+  const cas = document.getElementById('fDomluvenoCas').value || '10:00';
+  if (!datum) { showToast('Vyplň datum', true); return; }
+  const k = LINKEDIN_DATA.kontakty.find(x => x.id === currentLinkedinId);
+  if (!k) return;
+
+  k.stav = 'domluveno';
+  if (!k.stavHistorie) k.stavHistorie = [];
+  k.stavHistorie.push({ stav: 'domluveno', datum: new Date().toISOString().slice(0,10) });
+  k.domluvenyTermin = { datum, cas };
+  document.getElementById('liDetailStav').textContent = LINKEDIN_STAV_LABELS['domluveno'];
+  saveLinkedinToCache();
+  pushLinkedinToSheet();
+  renderFollowUpToday();
+  renderLinkedinStats();
+  closeModal('modalDomluveno');
+  showToast('Domluveno — vytvářím událost v kalendáři…');
+
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action: 'vytvoritLinkedinUdalost', jmeno: k.jmeno, telefon: k.telefon || '', datum, cas })
+  })
+    .then(r => r.json())
+    .then(res => {
+      if (res && res.status === 'ok') showToast('Přidáno do kalendáře');
+      else { console.log('Kalendářová událost selhala:', res); showToast('Stav uložen, kalendář se ale nepodařilo vytvořit', true); }
+    })
+    .catch(err => {
+      console.log('Kalendářová událost selhala:', err);
+      showToast('Stav uložen, kalendář se ale nepodařilo vytvořit', true);
+    });
+}
+
+function saveLinkedinDetail() {
+  const k = LINKEDIN_DATA.kontakty.find(x => x.id === currentLinkedinId);
+  if (!k) return;
+  k.telefon = document.getElementById('liTelefon').value.trim();
+  renderCallLink(k);
+  k.email = document.getElementById('liEmail').value.trim();
+  k.kategorie = document.getElementById('liKategorie').value;
+  k.poznamka = document.getElementById('liPoznamka').value.trim();
+  k.followUpDate = document.getElementById('liFollowUp').value;
+  saveLinkedinToCache();
+  pushLinkedinToSheet();
+  renderLinkedinCategoryStats();
+  showToast('Uloženo');
+}
+
+function deleteLinkedinContact() {
+  const k = LINKEDIN_DATA.kontakty.find(x => x.id === currentLinkedinId);
+  if (!k) return;
+  if (!confirm(`Smazat kontakt ${k.jmeno} natrvalo?`)) return;
+  LINKEDIN_DATA.kontakty = LINKEDIN_DATA.kontakty.filter(x => x.id !== currentLinkedinId);
+  saveLinkedinToCache();
+  pushLinkedinToSheet();
+  showView('view-linkedin');
+  renderLinkedinList();
+  renderLinkedinStats();
+  showToast('Kontakt smazán');
+}
+
+let zpravaAutorPending = 'martin';
+
+function openZpravaModal(autor) {
+  zpravaAutorPending = autor === 'kontakt' ? 'kontakt' : 'martin';
+  document.getElementById('fZpravaDatum').value = new Date().toISOString().slice(0,10);
+  document.getElementById('fZpravaText').value = '';
+  document.querySelector('#modalZprava .modal-title').textContent = zpravaAutorPending === 'kontakt' ? 'Nová odpověď od kontaktu' : 'Nová naše zpráva';
+  openModal('modalZprava');
+}
+
+function saveZprava() {
+  const datum = document.getElementById('fZpravaDatum').value;
+  const text = document.getElementById('fZpravaText').value.trim();
+  if (!datum || !text) { showToast('Vyplň datum i text zprávy', true); return; }
+  const k = LINKEDIN_DATA.kontakty.find(x => x.id === currentLinkedinId);
+  if (!k) return;
+  if (!k.zpravy) k.zpravy = [];
+  k.zpravy.push({ id: 'Z-' + Date.now(), datum, text, autor: zpravaAutorPending });
+  if (zpravaAutorPending === 'kontakt' && !k.odpovedel) {
+    k.odpovedel = true;
+    document.getElementById('liOdpovedel').checked = true;
+  }
+  saveLinkedinToCache();
+  pushLinkedinToSheet();
+  closeModal('modalZprava');
+  renderZpravyList(k);
+  renderLinkedinStats();
+  showToast('Uloženo');
+}
+
+let odpovedMatchedId = null;
+
+function openPridatOdpovedModal() {
+  document.getElementById('odpovedQuickPaste').value = '';
+  document.getElementById('odpovedMatchInfo').textContent = '';
+  document.getElementById('odpovedDatum').value = new Date().toISOString().slice(0,10);
+  document.getElementById('odpovedText').value = '';
+  odpovedMatchedId = null;
+  openModal('modalPridatOdpoved');
+}
+
+function parseOdpoved() {
+  const raw = document.getElementById('odpovedQuickPaste').value;
+  if (!raw.trim()) { showToast('Vlož nejdřív text bloku', true); return; }
+
+  function getVal(labels) {
+    for (const label of labels) {
+      const re = new RegExp(label + ':\\s*(.*)', 'i');
+      const m = raw.match(re);
+      if (m) return m[1].trim();
+    }
+    return '';
+  }
+
+  const jmeno = getVal(['JMÉNO', 'JMENO']);
+  const datumRaw = getVal(['DATUM']);
+  let datum = '';
+  const dm = datumRaw.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+  const dmCz = datumRaw.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+  if (dm) datum = dm[1] + '-' + dm[2].padStart(2,'0') + '-' + dm[3].padStart(2,'0');
+  else if (dmCz) datum = dmCz[3] + '-' + dmCz[2].padStart(2,'0') + '-' + dmCz[1].padStart(2,'0');
+
+  let odpoved = '';
+  const oIdx = raw.search(/ODPOV[ĚE]Ď?:/i);
+  if (oIdx !== -1) odpoved = raw.slice(oIdx).replace(/ODPOV[ĚE]Ď?:\s*/i, '').trim();
+
+  if (datum) document.getElementById('odpovedDatum').value = datum;
+  if (odpoved) document.getElementById('odpovedText').value = odpoved;
+
+  const infoEl = document.getElementById('odpovedMatchInfo');
+  if (!jmeno) {
+    infoEl.innerHTML = '<span style="color:var(--red);">Nenašel jsem jméno v textu.</span>';
+    odpovedMatchedId = null;
+    return;
+  }
+  const jmenoLower = jmeno.toLowerCase();
+  const matches = (LINKEDIN_DATA.kontakty || []).filter(k => k.jmeno && k.jmeno.toLowerCase().includes(jmenoLower));
+  if (matches.length === 1) {
+    odpovedMatchedId = matches[0].id;
+    infoEl.innerHTML = '<span style="color:var(--green);">Nalezen kontakt: ' + escapeHtml(matches[0].jmeno) + '</span>';
+  } else if (matches.length === 0) {
+    odpovedMatchedId = null;
+    infoEl.innerHTML = '<span style="color:var(--red);">Kontakt "' + escapeHtml(jmeno) + '" nenalezen v seznamu.</span>';
+  } else {
+    odpovedMatchedId = null;
+    infoEl.innerHTML = '<span style="color:var(--accent2);">Nalezeno víc kontaktů se jménem "' + escapeHtml(jmeno) + '" — přidej odpověď ručně přímo v detailu kontaktu.</span>';
+  }
+}
+
+function saveOdpoved() {
+  if (!odpovedMatchedId) { showToast('Nejdřív najdi platný kontakt tlačítkem výše', true); return; }
+  const datum = document.getElementById('odpovedDatum').value;
+  const text = document.getElementById('odpovedText').value.trim();
+  if (!datum || !text) { showToast('Vyplň datum i text odpovědi', true); return; }
+  const k = LINKEDIN_DATA.kontakty.find(x => x.id === odpovedMatchedId);
+  if (!k) { showToast('Kontakt už neexistuje', true); return; }
+  if (!k.zpravy) k.zpravy = [];
+  k.zpravy.push({ id: 'Z-' + Date.now(), datum, text, autor: 'kontakt' });
+  k.odpovedel = true;
+  saveLinkedinToCache();
+  pushLinkedinToSheet();
+  closeModal('modalPridatOdpoved');
+  renderLinkedinList();
+  renderLinkedinStats();
+  showToast('Odpověď přidána k ' + k.jmeno);
+}
+
+function openLinkedinNewModal() {
+  document.getElementById('liQuickPaste').value = '';
+  document.getElementById('liNewJmeno').value = '';
+  document.getElementById('liNewPozice').value = '';
+  document.getElementById('liNewKategorie').value = '';
+  document.getElementById('liNewDatum').value = new Date().toISOString().slice(0,10);
+  document.getElementById('liNewZprava').value = '';
+  openModal('modalLinkedinNew');
+}
+
+// Rozparsuje blok textu ve formátu:
+// JMÉNO: ...
+// POZICE: ...
+// DATUM: ...
+// ZPRÁVA: ... (může být víc řádků, bere se vše až do konce bloku)
+function parseQuickAdd() {
+  const raw = document.getElementById('liQuickPaste').value;
+  if (!raw.trim()) { showToast('Vlož nejdřív text bloku', true); return; }
+
+  function getVal(labels) {
+    for (const label of labels) {
+      const re = new RegExp(label + ':\\s*(.*)', 'i');
+      const m = raw.match(re);
+      if (m) return m[1].trim();
+    }
+    return '';
+  }
+
+  const jmeno = getVal(['JMÉNO', 'JMENO']);
+  const pozice = getVal(['POZICE']);
+  const datumRaw = getVal(['DATUM']);
+  let datum = '';
+  const dm = datumRaw.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+  const dmCz = datumRaw.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+  if (dm) datum = dm[1] + '-' + dm[2].padStart(2,'0') + '-' + dm[3].padStart(2,'0');
+  else if (dmCz) datum = dmCz[3] + '-' + dmCz[2].padStart(2,'0') + '-' + dmCz[1].padStart(2,'0');
+
+  let zprava = '';
+  const zIdx = raw.search(/ZPR[ÁA]VA:/i);
+  if (zIdx !== -1) {
+    zprava = raw.slice(zIdx).replace(/ZPR[ÁA]VA:\s*/i, '').trim();
+  }
+
+  document.getElementById('liNewJmeno').value = jmeno;
+  document.getElementById('liNewPozice').value = pozice;
+  if (datum) document.getElementById('liNewDatum').value = datum;
+  document.getElementById('liNewZprava').value = zprava;
+  showToast('Rozparsováno — zkontroluj pole níže');
+}
+
+function saveLinkedinNew() {
+  const jmeno = document.getElementById('liNewJmeno').value.trim();
+  const pozice = document.getElementById('liNewPozice').value.trim();
+  const kategorie = document.getElementById('liNewKategorie').value;
+  const datum = document.getElementById('liNewDatum').value;
+  const zprava = document.getElementById('liNewZprava').value.trim();
+  if (!jmeno) { showToast('Vyplň alespoň jméno', true); return; }
+
+  const existujici = (LINKEDIN_DATA.kontakty || []).find(k => k.jmeno && k.jmeno.trim().toLowerCase() === jmeno.toLowerCase());
+  if (existujici) {
+    const stavLabel = LINKEDIN_STAV_LABELS[existujici.stav || ''] || existujici.stav;
+    if (!confirm('Kontakt "' + jmeno + '" už v evidenci existuje (stav: ' + stavLabel + '). Opravdu přidat i tak jako nový, samostatný záznam?')) return;
+  }
+
+  if (!LINKEDIN_DATA.kontakty) LINKEDIN_DATA.kontakty = [];
+  const novy = {
+    id: 'LI-' + Date.now(),
+    jmeno, pozice, kategorie,
+    datumOsloveni: datum,
+    stav: '',
+    telefon: '',
+    email: '',
+    poznamka: '',
+    followUpDate: '',
+    zpravy: zprava ? [{ id: 'Z-' + Date.now(), datum, text: zprava, autor: 'martin' }] : [],
+    odpovedel: false
+  };
+  LINKEDIN_DATA.kontakty.push(novy);
+  saveLinkedinToCache();
+  pushLinkedinToSheet();
+  closeModal('modalLinkedinNew');
+  renderLinkedinList();
+  renderLinkedinStats();
+  renderLinkedinTrend();
+  renderLinkedinCategoryStats();
+  showToast('Kontakt uložen');
+}
+
+function presunoutDoNaboru() {
+  const k = LINKEDIN_DATA.kontakty.find(x => x.id === currentLinkedinId);
+  if (!k) return;
+  if (k.presunutoDoNaboru) { showToast('Tento kontakt už byl přesunut do Náboru', true); return; }
+  if (!confirm(`Přesunout ${k.jmeno} do Náborové evidence (pod Martin Eisenreich)?`)) return;
+
+  const casti = (k.jmeno || '').trim().split(/\s+/);
+  const jmeno = casti[0] || k.jmeno;
+  const prijmeni = casti.slice(1).join(' ') || '';
+
+  const newCand = {
+    id: 'C-' + Date.now(),
+    managerId: 'eisenreich',
+    jmeno, prijmeni,
+    odkud: '', spolecnost: '', pozice: k.pozice || '',
+    problem: 'Přesunuto z LinkedIn oslovení' + (k.telefon ? ' — telefon: ' + k.telefon : ''),
+    meetings: []
+  };
+  DATA.candidates.push(newCand);
+  saveToCache();
+  pushToSheet();
+  renderManagerGrid();
+
+  k.presunutoDoNaboru = true;
+  saveLinkedinToCache();
+  pushLinkedinToSheet();
+
+  document.getElementById('presunoutDoNaboruBtn').textContent = '✓ Přesunuto do Náboru';
+  showToast('Přesunuto do Náborové evidence');
+}
+
+function exportLinkedinPdf() {
+  const k = LINKEDIN_DATA.kontakty.find(x => x.id === currentLinkedinId);
+  if (!k) return;
+
+  document.getElementById('pliName').textContent = k.jmeno || '—';
+  document.getElementById('pliPozice').textContent = k.pozice || '—';
+  document.getElementById('pliStav').textContent = LINKEDIN_STAV_LABELS[k.stav || ''] || k.stav;
+  document.getElementById('pliOdpovedel').textContent = k.odpovedel ? 'Ano' : 'Ne';
+  document.getElementById('pliTelefon').textContent = k.telefon || '—';
+  document.getElementById('pliEmail').textContent = k.email || '—';
+  document.getElementById('pliDate').textContent = 'Vygenerováno ' + new Date().toLocaleDateString('cs-CZ', { day:'numeric', month:'long', year:'numeric' });
+
+  const zpravy = (k.zpravy || []).slice().sort((a,b) => (a.datum||'').localeCompare(b.datum||''));
+  const el = document.getElementById('pliKomunikace');
+  if (zpravy.length === 0) {
+    el.innerHTML = `<div class="p-meeting-empty">Zatím není zaznamenaná žádná komunikace.</div>`;
+  } else {
+    el.innerHTML = zpravy.map((z, idx) => {
+      const isKontakt = z.autor === 'kontakt';
+      const autor = isKontakt ? (k.jmeno || 'Kontakt') : 'Martin Eisenreich';
+      const cls = isKontakt ? 'p-meeting-kontakt' : 'p-meeting-martin';
+      return `<div class="p-meeting ${cls}">
+        <div class="p-meeting-author">${escapeHtml(autor)}</div>
+        <div class="p-meeting-head">#${idx + 1} — ${formatDateLong(z.datum)}</div>
+        <div class="p-meeting-desc">${escapeHtml(z.text || '')}</div>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('printAreaLinkedin').classList.add('print-active');
+  document.getElementById('printArea').classList.remove('print-active');
+  document.getElementById('printAreaList').classList.remove('print-active');
+  document.getElementById('printAreaLinkedinList').classList.remove('print-active');
+  document.getElementById('printAreaLinkedinCalling').classList.remove('print-active');
+  window.print();
+}
+
+// ============ HELPERS ============
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function formatDateShort(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric' });
+}
+function formatDateLong(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+function showToast(text, isError) {
+  const toast = document.getElementById('toast');
+  document.getElementById('toastText').textContent = text;
+  toast.querySelector('.toast-dot').style.background = isError ? 'var(--red)' : 'var(--green)';
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2200);
+}
+
+const MASTER_PIN_STORED = sessionStorage.getItem('master_pin_4fin') || '';
+document.addEventListener('DOMContentLoaded', () => {
+  if (MASTER_PIN_STORED) {
+    const el = document.getElementById('masterLock');
+    if (el) el.style.display = 'none';
+  }
+});
+async function prihlasitMaster(){
+  const pin = document.getElementById('masterPinInput').value.trim();
+  const msg = document.getElementById('masterLockMsg');
+  if(!pin){ msg.textContent = 'Zadej PIN.'; return; }
+  msg.textContent = 'Ověřuji...';
+  try{
+    const baseUrl = APPS_SCRIPT_URL.split('&master_pin=')[0];
+    const res = await fetch(baseUrl, {
+      method:'POST', headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({action:'prihlaseniMaster', pin})
+    });
+    const data = await res.json();
+    if(data.ok){
+      sessionStorage.setItem('master_pin_4fin', pin);
+      location.reload();
+    } else {
+      msg.textContent = 'Špatný PIN.';
+    }
+  }catch(e){ msg.textContent = 'Chyba připojení.'; console.log(e); }
+}
+</script>
+</body>
+</html>
