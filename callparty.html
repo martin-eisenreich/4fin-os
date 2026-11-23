@@ -109,6 +109,7 @@
       <h1>Nahrát výsledky call party</h1>
       <label class="sub" for="datumInput">Datum (uprav, pokud nahráváš starší kolo)</label>
       <input type="date" id="datumInput">
+      <label class="sub" style="display:block;margin-bottom:10px;"><input type="checkbox" id="zobrazitByvale" style="width:auto;margin:0 6px 0 0;"> Nabízet i neaktivní lidi (např. pro starší datum)</label>
       <input type="file" id="fotoInput" accept="image/*" capture="environment" onchange="zpracovatFotku(this)">
       <p class="sub" id="fotoMsg"></p>
       <div id="radkyContainer"></div>
@@ -137,6 +138,7 @@ var APP_TOKEN = '6696d0e4ae4d7f0d73530fbd67961aeb2d823f69'; // stejný token jak
 var authPersonId = '';
 var authPin = '';
 var tymJmena = [];
+var tymAktivniJmena = [];
 
 function volatBackend(action, extra) {
   var body = Object.assign({ action: action, auth_personId: authPersonId, auth_pin: authPin }, extra || {});
@@ -151,6 +153,7 @@ fetch(API_URL + '?action=getTym&token=' + APP_TOKEN)
   .then(function(r) { return r.json(); })
   .then(function(tym) {
     tymJmena = tym.filter(function(o) { return o.jmeno; }).map(function(o) { return o.jmeno; });
+    tymAktivniJmena = tym.filter(function(o) { return o.jmeno && o.aktivni; }).map(function(o) { return o.jmeno; });
     var sel = document.getElementById('jmenoSelect');
     sel.innerHTML = '<option value="">Vyber jméno…</option>';
     tym.filter(function(o) { return o.aktivni; }).forEach(function(o) {
@@ -203,8 +206,9 @@ function vykreslitStatistiky(res) {
 }
 
 function seznamJmen() {
-  var vsechna = tymJmena.slice();
-  if (lastStats && lastStats.lide) lastStats.lide.forEach(function(o) { vsechna.push(o.jmeno); });
+  var bye = document.getElementById('zobrazitByvale');
+  var vsechna = (bye && bye.checked) ? tymJmena.slice() : tymAktivniJmena.slice();
+  if (bye && bye.checked && lastStats && lastStats.lide) lastStats.lide.forEach(function(o) { vsechna.push(o.jmeno); });
   var videno = {}, vysl = [];
   vsechna.forEach(function(j) { if (j && !videno[j]) { videno[j] = 1; vysl.push(j); } });
   return vysl.sort(function(a, b) { return a.localeCompare(b, 'cs'); });
@@ -390,6 +394,8 @@ function nacistHistorii() {
 }
 
 function prepnoutDoplneni(bezpecneDatum) {
+  var w = document.getElementById('dwrap-' + bezpecneDatum);
+  if (w && !w.querySelector('select.osoba').value) sestavitVyberOsoby(w, '', '');
   document.getElementById('doplnit-' + bezpecneDatum).classList.toggle('show');
 }
 
